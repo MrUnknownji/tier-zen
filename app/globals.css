@@ -1,0 +1,117 @@
+/* globals.css */
+@import "tailwindcss";
+
+:root {
+    /* Font variables (will be populated by next/font in layout.tsx) */
+    /* Provide fallbacks here in case JS/Next Font fails, though Next Font should handle this. */
+    --font-geist-sans:
+        "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+    --font-geist-mono:
+        "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+
+    /* Light Theme (Default) */
+    --background: #f8fafc; /* slate-50 */
+    --foreground: #1e293b; /* slate-800 */
+    --accent-color: #00ff87;
+
+    --text-secondary: #64748b; /* slate-500 */
+    --card-bg: #ffffff;
+    --border-color: #cbd5e1; /* slate-300 */
+    --input-bg: #f1f5f9; /* slate-100 */
+    --input-border: #cbd5e1; /* slate-300 */
+    --placeholder-color: #94a3b8; /* slate-400 */
+    --button-inactive-bg: #e2e8f0; /* slate-200 */
+    --button-inactive-text: #334155; /* slate-700 */
+    --button-inactive-hover-bg: #cbd5e1; /* slate-300 */
+    --modal-overlay-bg: rgba(0, 0, 0, 0.5);
+    --tab-container-bg: #f1f5f9; /* slate-100 */
+    --raw-card-bg-value: #ffffff; /* For ring offsets or direct hex needs */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #101010;
+        --foreground: #e2e8f0; /* slate-200 */
+        /* --accent-color: #someOtherAccentForDark; */ /* Example if accent needed to change */
+
+        --text-secondary: #94a3b8; /* slate-400 */
+        --card-bg: #1c1c1c;
+        --border-color: #383838;
+        --input-bg: #2a2a2a;
+        --input-border: #454545;
+        --placeholder-color: #64748b; /* slate-500 */
+        --button-inactive-bg: #2d2d2d;
+        --button-inactive-text: #cbd5e1; /* slate-300 */
+        --button-inactive-hover-bg: #3a3a3a;
+        --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+        --tab-container-bg: rgba(0, 0, 0, 0.2);
+        --raw-card-bg-value: #1c1c1c;
+    }
+}
+
+/*
+  In Tailwind CSS v4, you use the @theme directive to map your CSS variables
+  to Tailwind's theme properties.
+*/
+@theme {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-accent: var(--accent-color);
+    --color-text-secondary: var(--text-secondary);
+    --color-card-bg: var(--card-bg);
+    --color-border-color: var(--border-color);
+    --color-input-bg: var(--input-bg);
+    --color-input-border: var(--input-border);
+    --color-placeholder-color: var(--placeholder-color);
+    --color-button-inactive-bg: var(--button-inactive-bg);
+    --color-button-inactive-text: var(--button-inactive-text);
+    --color-button-inactive-hover-bg: var(--button-inactive-hover-bg);
+    --color-modal-overlay-bg: var(--modal-overlay-bg);
+    --color-tab-container-bg: var(--tab-container-bg);
+    --color-raw-card-bg-value: var(
+        --raw-card-bg-value
+    ); /* If you need this as a color utility */
+
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+
+    /* You can also define other theme properties here, like spacing, etc. */
+    /* --spacing-sm: 0.5rem; */
+}
+
+/* Apply base styles using the mapped theme variables */
+body {
+    background-color: theme(
+        color-background
+    ); /* Use theme() to reference mapped variables */
+    color: theme(color-foreground);
+    font-family: theme(font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* If you are using 'darkMode: class' in your Tailwind configuration (which might
+   still be needed for explicit dark mode toggling even in v4 depending on setup),
+   you would still define the dark variables within a .dark class or similar.
+   However, the @media query approach above handles OS preference automatically.
+*/
+html.dark {
+    --background: #101010;
+    --foreground: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --card-bg: #1c1c1c;
+    --border-color: #383838;
+    --input-bg: #2a2a2a;
+    --input-border: #454545;
+    --placeholder-color: #64748b;
+    --button-inactive-bg: #2d2d2d;
+    --button-inactive-text: #cbd5e1;
+    --button-inactive-hover-bg: #3a3a3a;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+    --tab-container-bg: rgba(0, 0, 0, 0.2);
+    --raw-card-bg-value: #1c1c1c;
+}
