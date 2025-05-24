@@ -119,8 +119,8 @@ const initialUnrankedItemsData: Item[] = [
   },
 ];
 
-const ITEM_CARD_HEIGHT_CLASS = "h-36"; // Approx 144px
-const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[156px]"; // Card height + padding
+const ITEM_CARD_HEIGHT_CLASS = "h-36";
+const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[156px]";
 
 function App() {
   const [tiers, setTiers] = useState<Tier[]>(initialTiersData);
@@ -215,7 +215,7 @@ function App() {
 
   const exportToPng = async () => {
     const element = document.getElementById("tierListContent");
-    let originalBgColor = ""; // Declare here for broader scope
+    let originalBgColor = "";
 
     if (!element) {
       console.error("Element with ID 'tierListContent' not found.");
@@ -223,20 +223,12 @@ function App() {
       return;
     }
     try {
-      originalBgColor = element.style.backgroundColor; // Assign here
-      element.style.backgroundColor = isDarkMode ? "#1a1a1a" : "#ffffff"; // Dark or Light BG
+      originalBgColor = element.style.backgroundColor;
+      element.style.backgroundColor = isDarkMode ? "#1a1a1a" : "#ffffff";
 
       const dataUrl = await toPng(element, {
-        // Ensure external images are loaded, might need proxy if CORS issues
-        // allowTaint: true,
-        // Use a higher quality if needed, default is 1
         pixelRatio: Math.max(1.5, window.devicePixelRatio || 1),
-        // You can specify a custom width/height if needed
-        // width: element.scrollWidth,
-        // height: element.scrollHeight,
-        // Filter out elements you don't want in the image
         filter: (node) => {
-          // Example: exclude buttons or specific controls from the image
           if (
             node.tagName === "BUTTON" &&
             (node.textContent?.includes("Export") ||
@@ -248,11 +240,11 @@ function App() {
         },
       });
       saveAs(dataUrl, "tierlist.png");
-      element.style.backgroundColor = originalBgColor; // Reset background color
+      element.style.backgroundColor = originalBgColor;
     } catch (error) {
       console.error("Error exporting to PNG:", error);
       alert("Error: Could not generate PNG. See console for details.");
-      if (element) element.style.backgroundColor = originalBgColor; // Reset background color using variable from outer scope
+      if (element) element.style.backgroundColor = originalBgColor;
     }
   };
 
@@ -321,7 +313,7 @@ function App() {
       setUnrankedItems((prev) => [
         ...prev,
         ...tierToDelete.items.map((item) => ({ ...item, hasError: false })),
-      ]); // Reset error state when moving
+      ]);
     setTiers((prevTiers) => prevTiers.filter((tier) => tier.id !== tierId));
   };
 
@@ -350,7 +342,7 @@ function App() {
       if (item.id === itemId) {
         found = true;
         return { ...item, ...updatedProps, hasError: false };
-      } // Reset error on update
+      }
       return item;
     };
     setTiers((prevTiers) =>
@@ -427,7 +419,7 @@ function App() {
         ? unrankedItems.length
         : (tiers.find((t) => t.id === targetTierId)?.items.length ?? 0);
     const targetIndex = targetIndexInput ?? getTargetLength();
-    const itemToMove = { ...movedItem, hasError: false }; // Reset error state on drop
+    const itemToMove = { ...movedItem, hasError: false };
 
     if (srcTierId === "unranked")
       setUnrankedItems((prev) => prev.filter((i) => i.id !== itemToMove.id));
