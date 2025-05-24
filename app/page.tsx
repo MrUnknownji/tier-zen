@@ -17,7 +17,10 @@ import {
   Link2,
   Image as ImageIcon,
   AlertCircle,
+  Download,
 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { saveAs } from "file-saver";
 
 const generateId = () =>
   `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -190,6 +193,91 @@ function App() {
       isDarkMode ? root.classList.add("dark") : root.classList.remove("dark");
     }
   }, [isDarkMode, isEditMode]);
+
+  const escapeXml = (unsafe: string): string => {
+    return unsafe.replace(/[<>&"']/g, (match) => {
+      switch (match) {
+        case "<":
+          return "&lt;";
+        case ">":
+          return "&gt;";
+        case "&":
+          return "&amp;";
+        case '"':
+          return "&quot;";
+        case "'":
+          return "&apos;";
+        default:
+          return match;
+      }
+    });
+  };
+
+  const exportToPng = async () => {
+    const element = document.getElementById("tierListContent");
+    if (!element) {
+      console.error("Element with ID 'tierListContent' not found.");
+      alert("Error: Could not find content to export.");
+      return;
+    }
+    try {
+      // Temporarily set a white background for the export
+      const originalBgColor = element.style.backgroundColor;
+      element.style.backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff'; // Dark or Light BG
+
+      const dataUrl = await toPng(element, {
+         // Ensure external images are loaded, might need proxy if CORS issues
+        allowTaint: true, 
+        // Use a higher quality if needed, default is 1
+        pixelRatio: Math.max(1.5, window.devicePixelRatio || 1), 
+        // You can specify a custom width/height if needed
+        // width: element.scrollWidth,
+        // height: element.scrollHeight,
+        // Filter out elements you don't want in the image
+        filter: (node) => {
+            // Example: exclude buttons or specific controls from the image
+            if (node.tagName === 'BUTTON' && (node.textContent?.includes('Export') || node.classList.contains('toolbar-button-class-if-any'))) {
+                return false;
+            }
+            return true;
+        }
+      });
+      saveAs(dataUrl, "tierlist.png");
+      element.style.backgroundColor = originalBgColor; // Reset background color
+    } catch (error) {
+      console.error("Error exporting to PNG:", error);
+      alert("Error: Could not generate PNG. See console for details.");
+      const element = document.getElementById("tierListContent"); // Re-get element in case of async issues
+      if(element) element.style.backgroundColor = element.style.backgroundColor; // Reset background color
+    }
+  };
+
+  const exportToXml = async () => {
+    let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n<tierlist>\n';
+
+    // Tiers
+    xmlString += "  <tiers>\n";
+    tiers.forEach((tier) => {
+      xmlString += `    <tier name="${escapeXml(tier.name)}" color="${escapeXml(tier.color)}">\n`;
+      tier.items.forEach((item) => {
+        xmlString += `      <item name="${escapeXml(item.name)}"${item.imageUrl ? ` imageUrl="${escapeXml(item.imageUrl)}"` : ""}></item>\n`;
+      });
+      xmlString += "    </tier>\n";
+    });
+    xmlString += "  </tiers>\n";
+
+    // Unranked Items
+    xmlString += "  <unrankedItems>\n";
+    unrankedItems.forEach((item) => {
+      xmlString += `    <item name="${escapeXml(item.name)}"${item.imageUrl ? ` imageUrl="${escapeXml(item.imageUrl)}"` : ""}></item>\n`;
+    });
+    xmlString += "  </unrankedItems>\n";
+
+    xmlString += "</tierlist>";
+
+    const blob = new Blob([xmlString], { type: "application/xml;charset=utf-8" });
+    saveAs(blob, "tierlist.xml");
+  };
 
   const addTier = () => {
     const newTier: Tier = {
@@ -407,13 +495,16 @@ function App() {
               setShowAddItemModal,
               setItemToEdit,
               themeClassNames,
+              exportToPng,
+              exportToXml,
             }}
           />
         </header>
-        <main className="space-y-3 sm:space-y-4">
-          {tiers.map((tier) => (
-            <TierRow
-              key={tier.id}
+        <div id="tierListContent" className={`${themeClassNames.bgColor} p-4`}> {/* Added padding for better export */}
+          <main className="space-y-3 sm:space-y-4">
+            {tiers.map((tier) => (
+              <TierRow
+                key={tier.id}
               {...{
                 tier,
                 updateTier,
@@ -433,12 +524,12 @@ function App() {
                 handleDragOverTier,
                 handleItemError,
               }}
-            />
-          ))}
-        </main>
-        <UnrankedItemsContainer
-          {...{
-            items: unrankedItems,
+              />
+            ))}
+          </main>
+          <UnrankedItemsContainer
+            {...{
+              items: unrankedItems,
             isEditMode,
             onDragStartItem,
             onDragOverItem,
@@ -469,7 +560,7 @@ function App() {
             }}
           />
         )}
-      </div>
+        </div> {/* End of tierListContent div */}
       <footer
         className={`mt-8 text-center text-sm ${themeClassNames.secondaryTextColor}`}
       >
@@ -489,6 +580,8 @@ interface ToolbarProps {
   setShowAddItemModal: (v: boolean) => void;
   setItemToEdit: (i: Item | null) => void;
   themeClassNames: ThemeClassNames;
+  exportToPng: () => void;
+  exportToXml: () => void;
 }
 
 function Toolbar({
@@ -501,6 +594,8 @@ function Toolbar({
   setShowAddItemModal,
   setItemToEdit,
   themeClassNames,
+  exportToPng,
+  exportToXml,
 }: ToolbarProps) {
   const btnBase = `p-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:ring-offset-1 focus:ring-offset-[var(--raw-card-bg-value)]`;
   const active = `bg-[var(--accent-color)] text-black`;
@@ -557,6 +652,20 @@ function Toolbar({
         </>
       )}
       {!isEditMode && <div className="w-px h-6 bg-transparent mx-1"></div>}
+      <button
+        onClick={exportToPng}
+        className={`${btnBase} ${inactive}`}
+        title="Export tier list as PNG"
+      >
+        <Download size={18} /> Export PNG
+      </button>
+      <button
+        onClick={exportToXml}
+        className={`${btnBase} ${inactive}`}
+        title="Export tier list data as XML"
+      >
+        <Download size={18} /> Export XML
+      </button>
       <button
         onClick={() => setIsDarkMode(!isDarkMode)}
         className={`${btnBase} ${inactive}`}
