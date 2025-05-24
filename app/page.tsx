@@ -215,14 +215,15 @@ function App() {
 
   const exportToPng = async () => {
     const element = document.getElementById("tierListContent");
+    let originalBgColor = ""; // Declare here for broader scope
+
     if (!element) {
       console.error("Element with ID 'tierListContent' not found.");
       alert("Error: Could not find content to export.");
       return;
     }
     try {
-      // Temporarily set a white background for the export
-      const originalBgColor = element.style.backgroundColor;
+      originalBgColor = element.style.backgroundColor; // Assign here
       element.style.backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff'; // Dark or Light BG
 
       const dataUrl = await toPng(element, {
@@ -247,8 +248,7 @@ function App() {
     } catch (error) {
       console.error("Error exporting to PNG:", error);
       alert("Error: Could not generate PNG. See console for details.");
-      const element = document.getElementById("tierListContent"); // Re-get element in case of async issues
-      if(element) element.style.backgroundColor = element.style.backgroundColor; // Reset background color
+      if(element) element.style.backgroundColor = originalBgColor; // Reset background color using variable from outer scope
     }
   };
 
@@ -485,19 +485,17 @@ function App() {
             TierZen
           </h1>
           <Toolbar
-            {...{
-              isEditMode,
-              setIsEditMode,
-              addTier,
-              resetAll,
-              isDarkMode,
-              setIsDarkMode,
-              setShowAddItemModal,
-              setItemToEdit,
-              themeClassNames,
-              exportToPng,
-              exportToXml,
-            }}
+            isEditMode={isEditMode}
+            setIsEditMode={setIsEditMode}
+            addTier={addTier}
+            resetAll={resetAll}
+            isDarkMode={isDarkMode}
+            setIsDarkMode={setIsDarkMode}
+            setShowAddItemModal={setShowAddItemModal}
+            setItemToEdit={setItemToEdit}
+            themeClassNames={themeClassNames}
+            exportToPng={exportToPng}
+            exportToXml={exportToXml}
           />
         </header>
         <div id="tierListContent" className={`${themeClassNames.bgColor} p-4`}> {/* Added padding for better export */}
@@ -505,59 +503,53 @@ function App() {
             {tiers.map((tier) => (
               <TierRow
                 key={tier.id}
-              {...{
-                tier,
-                updateTier,
-                deleteTier,
-                isEditMode,
-                onDragStartItem,
-                onDragOverItem,
-                onDropItem: (idx) => onDropItem(tier.id, idx),
-                deleteItem,
-                openEditItemModal,
-                themeClassNames,
-                isDarkMode,
-                isDraggingGlobal,
-                draggedItem,
-                draggedOverTierId,
-                dropPreviewIndex,
-                handleDragOverTier,
-                handleItemError,
-              }}
+                tier={tier}
+                updateTier={updateTier}
+                deleteTier={deleteTier}
+                isEditMode={isEditMode}
+                onDragStartItem={onDragStartItem}
+                onDragOverItem={onDragOverItem}
+                onDropItem={(idx) => onDropItem(tier.id, idx)}
+                deleteItem={deleteItem}
+                openEditItemModal={openEditItemModal}
+                themeClassNames={themeClassNames}
+                isDarkMode={isDarkMode}
+                isDraggingGlobal={isDraggingGlobal}
+                draggedItem={draggedItem}
+                draggedOverTierId={draggedOverTierId}
+                dropPreviewIndex={dropPreviewIndex}
+                handleDragOverTier={handleDragOverTier}
+                handleItemError={handleItemError}
               />
             ))}
           </main>
           <UnrankedItemsContainer
-            {...{
-              items: unrankedItems,
-            isEditMode,
-            onDragStartItem,
-            onDragOverItem,
-            onDropItem: (idx) => onDropItem("unranked", idx),
-            deleteItem,
-            openEditItemModal,
-            themeClassNames,
-            isDarkMode,
-            isDraggingGlobal,
-            draggedItem,
-            draggedOverTierId,
-            dropPreviewIndex,
-            handleDragOverTier,
-            handleItemError,
-          }}
+            items={unrankedItems}
+            isEditMode={isEditMode}
+            onDragStartItem={onDragStartItem}
+            onDragOverItem={onDragOverItem}
+            onDropItem={(idx) => onDropItem("unranked", idx)}
+            deleteItem={deleteItem}
+            openEditItemModal={openEditItemModal}
+            themeClassNames={themeClassNames}
+            isDarkMode={isDarkMode}
+            isDraggingGlobal={isDraggingGlobal}
+            draggedItem={draggedItem}
+            draggedOverTierId={draggedOverTierId}
+            dropPreviewIndex={dropPreviewIndex}
+            handleDragOverTier={handleDragOverTier}
+            handleItemError={handleItemError}
         />
         {showAddItemModal && (
           <AddItemModal
-            {...{
-              isOpen: showAddItemModal,
-              onClose: () => {
-                setShowAddItemModal(false);
-                setItemToEdit(null);
-              },
-              onSaveItem: handleSaveItemFromModal,
-              itemToEdit,
-              themeClassNames,
+            isOpen={showAddItemModal}
+            onClose={() => {
+              setShowAddItemModal(false);
+              setItemToEdit(null);
             }}
+            onSaveItem={handleSaveItemFromModal}
+            itemToEdit={itemToEdit}
+            themeClassNames={themeClassNames}
           />
         )}
         </div> {/* End of tierListContent div */}
