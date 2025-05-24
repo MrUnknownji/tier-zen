@@ -224,31 +224,35 @@ function App() {
     }
     try {
       originalBgColor = element.style.backgroundColor; // Assign here
-      element.style.backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff'; // Dark or Light BG
+      element.style.backgroundColor = isDarkMode ? "#1a1a1a" : "#ffffff"; // Dark or Light BG
 
       const dataUrl = await toPng(element, {
-         // Ensure external images are loaded, might need proxy if CORS issues
-        allowTaint: true, 
+        // Ensure external images are loaded, might need proxy if CORS issues
+        // allowTaint: true,
         // Use a higher quality if needed, default is 1
-        pixelRatio: Math.max(1.5, window.devicePixelRatio || 1), 
+        pixelRatio: Math.max(1.5, window.devicePixelRatio || 1),
         // You can specify a custom width/height if needed
         // width: element.scrollWidth,
         // height: element.scrollHeight,
         // Filter out elements you don't want in the image
         filter: (node) => {
-            // Example: exclude buttons or specific controls from the image
-            if (node.tagName === 'BUTTON' && (node.textContent?.includes('Export') || node.classList.contains('toolbar-button-class-if-any'))) {
-                return false;
-            }
-            return true;
-        }
+          // Example: exclude buttons or specific controls from the image
+          if (
+            node.tagName === "BUTTON" &&
+            (node.textContent?.includes("Export") ||
+              node.classList.contains("toolbar-button-class-if-any"))
+          ) {
+            return false;
+          }
+          return true;
+        },
       });
       saveAs(dataUrl, "tierlist.png");
       element.style.backgroundColor = originalBgColor; // Reset background color
     } catch (error) {
       console.error("Error exporting to PNG:", error);
       alert("Error: Could not generate PNG. See console for details.");
-      if(element) element.style.backgroundColor = originalBgColor; // Reset background color using variable from outer scope
+      if (element) element.style.backgroundColor = originalBgColor; // Reset background color using variable from outer scope
     }
   };
 
@@ -275,7 +279,9 @@ function App() {
 
     xmlString += "</tierlist>";
 
-    const blob = new Blob([xmlString], { type: "application/xml;charset=utf-8" });
+    const blob = new Blob([xmlString], {
+      type: "application/xml;charset=utf-8",
+    });
     saveAs(blob, "tierlist.xml");
   };
 
@@ -498,7 +504,9 @@ function App() {
             exportToXml={exportToXml}
           />
         </header>
-        <div id="tierListContent" className={`${themeClassNames.bgColor} p-4`}> {/* Added padding for better export */}
+        <div id="tierListContent" className={`${themeClassNames.bgColor} p-4`}>
+          {" "}
+          {/* Added padding for better export */}
           <main className="space-y-3 sm:space-y-4">
             {tiers.map((tier) => (
               <TierRow
@@ -539,25 +547,26 @@ function App() {
             dropPreviewIndex={dropPreviewIndex}
             handleDragOverTier={handleDragOverTier}
             handleItemError={handleItemError}
-        />
-        {showAddItemModal && (
-          <AddItemModal
-            isOpen={showAddItemModal}
-            onClose={() => {
-              setShowAddItemModal(false);
-              setItemToEdit(null);
-            }}
-            onSaveItem={handleSaveItemFromModal}
-            itemToEdit={itemToEdit}
-            themeClassNames={themeClassNames}
           />
-        )}
-        </div> {/* End of tierListContent div */}
-      <footer
-        className={`mt-8 text-center text-sm ${themeClassNames.secondaryTextColor}`}
-      >
-        <p>TierZen by Gemini. Drag and drop items in 'Rank' mode.</p>
-      </footer>
+          {showAddItemModal && (
+            <AddItemModal
+              isOpen={showAddItemModal}
+              onClose={() => {
+                setShowAddItemModal(false);
+                setItemToEdit(null);
+              }}
+              onSaveItem={handleSaveItemFromModal}
+              itemToEdit={itemToEdit}
+              themeClassNames={themeClassNames}
+            />
+          )}
+        </div>
+        <footer
+          className={`mt-8 text-center text-sm ${themeClassNames.secondaryTextColor}`}
+        >
+          <p>TierZen by Gemini. Drag and drop items in 'Rank' mode.</p>
+        </footer>
+      </div>
     </div>
   );
 }
