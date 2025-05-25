@@ -30,6 +30,14 @@
     --modal-overlay-bg: rgba(0, 0, 0, 0.5);
     --tab-container-bg: #f1f5f9; /* slate-100 */
     --raw-card-bg-value: #ffffff; /* For ring offsets or direct hex needs */
+
+    --card-hover-bg: #e5e7eb; /* slate-200 */
+    --card-bg-subtle: #f3f4f6; /* slate-100 */
+    --icon-secondary-color: #6b7280; /* slate-500 */
+    --card-text-overlay-bg: rgba(0, 0, 0, 0.4);
+    --card-text-color: #ffffff;
+    --input-bg-transparent: rgba(255, 255, 255, 0.7);
+    --input-fg: #1e293b; /* slate-800 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -50,6 +58,14 @@
         --modal-overlay-bg: rgba(0, 0, 0, 0.7);
         --tab-container-bg: rgba(0, 0, 0, 0.2);
         --raw-card-bg-value: #1c1c1c;
+
+        --card-hover-bg: #2d2d2d;
+        --card-bg-subtle: #2a2a2a;
+        --icon-secondary-color: #9ca3af; /* slate-400 */
+        --card-text-overlay-bg: rgba(0, 0, 0, 0.6);
+        --card-text-color: #f3f4f6; /* slate-100 */
+        --input-bg-transparent: rgba(30, 30, 30, 0.7);
+        --input-fg: #e2e8f0; /* slate-200 */
     }
 }
 
@@ -72,9 +88,15 @@
     --color-button-inactive-hover-bg: var(--button-inactive-hover-bg);
     --color-modal-overlay-bg: var(--modal-overlay-bg);
     --color-tab-container-bg: var(--tab-container-bg);
-    --color-raw-card-bg-value: var(
-        --raw-card-bg-value
-    ); /* If you need this as a color utility */
+    --color-raw-card-bg-value: var(--raw-card-bg-value); /* If you need this as a color utility */
+
+    --color-card-hover-bg: var(--card-hover-bg);
+    --color-card-bg-subtle: var(--card-bg-subtle);
+    --color-icon-secondary: var(--icon-secondary-color);
+    --color-card-text-overlay-bg: var(--card-text-overlay-bg);
+    --color-card-text: var(--card-text-color);
+    --color-input-bg-transparent: var(--input-bg-transparent);
+    --color-input-fg: var(--input-fg);
 
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
@@ -114,4 +136,12 @@ html.dark {
     --modal-overlay-bg: rgba(0, 0, 0, 0.7);
     --tab-container-bg: rgba(0, 0, 0, 0.2);
     --raw-card-bg-value: #1c1c1c;
+
+    --card-hover-bg: #2d2d2d;
+    --card-bg-subtle: #2a2a2a;
+    --icon-secondary-color: #9ca3af; /* slate-400 */
+    --card-text-overlay-bg: rgba(0, 0, 0, 0.6);
+    --card-text-color: #f3f4f6; /* slate-100 */
+    --input-bg-transparent: rgba(30, 30, 30, 0.7);
+    --input-fg: #e2e8f0; /* slate-200 */
 }
