@@ -64,13 +64,21 @@ function TierZenPage() {
   // Effects for persisting state changes to localStorage
   useEffect(() => { if (typeof window !== "undefined") localStorage.setItem("tierListTiersV4", JSON.stringify(tiers)); }, [tiers]);
   useEffect(() => { if (typeof window !== "undefined") localStorage.setItem("tierListUnrankedItemsV4", JSON.stringify(unrankedItems)); }, [unrankedItems]);
+  
+  // *** CORRECTED useEffect for Dark Mode ***
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("tierListThemeV4", JSON.stringify(isDarkMode));
-      localStorage.setItem("tierListModeV4", JSON.stringify(isEditMode));
       document.documentElement.classList.toggle("dark", isDarkMode);
     }
-  }, [isDarkMode, isEditMode]);
+  }, [isDarkMode]);
+
+  // *** CORRECTED useEffect for Edit Mode persistence ***
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tierListModeV4", JSON.stringify(isEditMode));
+    }
+  }, [isEditMode]);
 
   const displayNotification = (message: string, type: 'error' | 'success' | 'info') => {
     setPageNotification({ id: Date.now(), message, type });
