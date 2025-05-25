@@ -39,11 +39,10 @@ describe('Utility Functions', () => {
     });
     
     it('should handle invalid hex colors and default to black', () => {
-      // Suppress console.warn for this test case
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      expect(getContrastingTextColor('#12345')).toBe('#000000'); // Invalid length
-      expect(getContrastingTextColor('blue')).toBe('#000000');   // Invalid format
-      expect(getContrastingTextColor('#XYZ')).toBe('#000000');    // Invalid characters
+      expect(getContrastingTextColor('#12345')).toBe('#000000'); 
+      expect(getContrastingTextColor('blue')).toBe('#000000');   
+      expect(getContrastingTextColor('#XYZ')).toBe('#000000');    
       expect(consoleWarnSpy).toHaveBeenCalledTimes(3);
       consoleWarnSpy.mockRestore();
     });
@@ -51,7 +50,8 @@ describe('Utility Functions', () => {
 
   describe('escapeXml', () => {
     it('should escape special XML characters', () => {
-      expect(escapeXml('<tag attr="value">text & more's</tag>'))
+      // Corrected line: 'more\'s'
+      expect(escapeXml('<tag attr="value">text & more\'s</tag>'))
         .toBe('&lt;tag attr=&quot;value&quot;&gt;text &amp; more&apos;s&lt;/tag&gt;');
     });
 

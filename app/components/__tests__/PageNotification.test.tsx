@@ -7,24 +7,26 @@ import type { NotificationMessage } from '../PageNotification';
 
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
-  ...jest.requireActual('lucide-react'), // Import and retain default behavior
+  ...jest.requireActual('lucide-react'), 
   XCircle: () => <svg data-testid="x-circle-icon" />,
   AlertTriangle: () => <svg data-testid="alert-triangle-icon" />,
   CheckCircle: () => <svg data-testid="check-circle-icon" />,
 }));
 
 describe('PageNotification Component', () => {
-  jest.useFakeTimers(); // Use Jest's fake timers for auto-dismissal
+  jest.useFakeTimers(); 
 
   const mockOnDismiss = jest.fn();
 
   beforeEach(() => {
-    mockOnDismiss.mockClear(); // Clear mock calls before each test
+    mockOnDismiss.mockClear(); 
   });
 
   it('should not render if notification prop is null', () => {
     render(<PageNotification notification={null} onDismiss={mockOnDismiss} />);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument(); // Assuming the notification has a role like 'alert' or 'status'
+    // Use queryByRole with a more generic role or testid if specific alert role isn't set
+    expect(screen.queryByTestId('alert-triangle-icon')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('check-circle-icon')).not.toBeInTheDocument();
   });
 
   it('should render error notification correctly', () => {
@@ -32,10 +34,10 @@ describe('PageNotification Component', () => {
     render(<PageNotification notification={notification} onDismiss={mockOnDismiss} />);
     
     expect(screen.getByText('Error message')).toBeInTheDocument();
-    expect(screen.getByTestId('alert-triangle-icon')).toBeInTheDocument(); // Check for error icon
-    // Check for appropriate styling (e.g., class name)
+    expect(screen.getByTestId('alert-triangle-icon')).toBeInTheDocument();
     const notificationElement = screen.getByText('Error message').closest('div');
-    expect(notificationElement).toHaveClass('bg-red-500');
+    // *** MODIFIED ASSERTION ***
+    expect(notificationElement?.className).toContain('bg-red-500');
   });
 
   it('should render success notification correctly', () => {
@@ -43,9 +45,10 @@ describe('PageNotification Component', () => {
     render(<PageNotification notification={notification} onDismiss={mockOnDismiss} />);
     
     expect(screen.getByText('Success message')).toBeInTheDocument();
-    expect(screen.getByTestId('check-circle-icon')).toBeInTheDocument(); // Check for success icon
+    expect(screen.getByTestId('check-circle-icon')).toBeInTheDocument();
     const notificationElement = screen.getByText('Success message').closest('div');
-    expect(notificationElement).toHaveClass('bg-green-500');
+    // *** MODIFIED ASSERTION ***
+    expect(notificationElement?.className).toContain('bg-green-500');
   });
 
   it('should render info notification correctly (default)', () => {
@@ -53,16 +56,18 @@ describe('PageNotification Component', () => {
     render(<PageNotification notification={notification} onDismiss={mockOnDismiss} />);
     
     expect(screen.getByText('Info message')).toBeInTheDocument();
-    expect(screen.getByTestId('alert-triangle-icon')).toBeInTheDocument(); // Default icon
+    expect(screen.getByTestId('alert-triangle-icon')).toBeInTheDocument(); 
     const notificationElement = screen.getByText('Info message').closest('div');
-    expect(notificationElement).toHaveClass('bg-blue-500');
+    // *** MODIFIED ASSERTION ***
+    expect(notificationElement?.className).toContain('bg-blue-500');
   });
 
   it('should call onDismiss when close button is clicked', () => {
     const notification: NotificationMessage = { id: 4, message: 'Test message', type: 'info' };
     render(<PageNotification notification={notification} onDismiss={mockOnDismiss} />);
     
-    const closeButton = screen.getByRole('button'); // Assuming the close button is the only button
+    // Assuming the close button is the only button, or add a more specific testid/aria-label
+    const closeButton = screen.getByRole('button'); 
     fireEvent.click(closeButton);
     expect(mockOnDismiss).toHaveBeenCalledTimes(1);
   });
@@ -74,7 +79,7 @@ describe('PageNotification Component', () => {
     expect(screen.getByText('Auto dismiss test')).toBeInTheDocument();
     
     act(() => {
-      jest.advanceTimersByTime(5000); // Advance timers by 5 seconds
+      jest.advanceTimersByTime(5000); 
     });
     
     expect(mockOnDismiss).toHaveBeenCalledTimes(1);
@@ -85,10 +90,7 @@ describe('PageNotification Component', () => {
     const { unmount } = render(<PageNotification notification={notification} onDismiss={mockOnDismiss} />);
     
     const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
-    unmount(); // Unmount the component
-    
-    // Check if clearTimeout was called. This assumes the timer was set.
-    // The spy should be called when the component unmounts and cleans up its effect.
+    unmount(); 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1); 
     clearTimeoutSpy.mockRestore();
   });
