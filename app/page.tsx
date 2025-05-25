@@ -80,6 +80,13 @@ interface ThemeClassNames {
   buttonInactiveHoverBg: string;
   modalOverlayBg: string;
   tabContainerBg: string;
+  cardHoverBgColor: string;
+  cardBgSubtleColor: string;
+  iconSecondaryColor: string;
+  cardTextOverlayBgColor: string;
+  cardTextColor: string;
+  inputBgTransparentColor: string;
+  inputFgColor: string;
 }
 
 const initialTiersData: Tier[] = [
@@ -169,6 +176,14 @@ function App() {
       buttonInactiveHoverBg: "hover:bg-[var(--button-inactive-hover-bg)]",
       modalOverlayBg: "bg-[var(--modal-overlay-bg)]",
       tabContainerBg: "bg-[var(--tab-container-bg)]",
+      // New theme class names
+      cardHoverBgColor: "hover:bg-[var(--card-hover-bg)]",
+      cardBgSubtleColor: "bg-[var(--card-bg-subtle)]",
+      iconSecondaryColor: "text-[var(--icon-secondary-color)]",
+      cardTextOverlayBgColor: "bg-[var(--card-text-overlay-bg)]",
+      cardTextColor: "text-[var(--card-text-color)]",
+      inputBgTransparentColor: "bg-[var(--input-bg-transparent)]",
+      inputFgColor: "text-[var(--input-fg)]",
     };
   }, []);
 
@@ -792,7 +807,7 @@ function TierRow({
             onChange={handleNameChange}
             onBlur={saveName}
             onKeyDown={handleKeyDown}
-            className={`w-full text-sm p-1 rounded bg-white/70 text-black focus:outline-none ring-1 ring-[var(--accent-color)] dark:ring-gray-300`}
+            className={`w-full text-sm p-1 rounded ${themeClassNames.inputBgTransparentColor} ${themeClassNames.inputFgColor} focus:outline-none ring-1 ring-[var(--accent-color)] dark:ring-gray-300`}
             autoFocus
           />
         ) : (
@@ -969,7 +984,7 @@ function ItemCard({
             }
           : undefined
       }
-      className={`m-1 ${isDarkMode ? "bg-neutral-800 hover:bg-neutral-700" : "bg-slate-200 hover:bg-slate-300"} rounded-lg shadow-md w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} flex flex-col relative transition-all duration-150 ${draggable ? "cursor-grab hover:shadow-xl transform hover:-translate-y-0.5" : "cursor-default"} group overflow-hidden`}
+      className={`m-1 ${themeClassNames.cardBgColor} rounded-lg shadow-md w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} flex flex-col relative transition-all duration-150 ${draggable ? "cursor-grab hover:shadow-xl transform hover:-translate-y-0.5" : "cursor-default"} group overflow-hidden`}
       title={item.name}
     >
       <div className="flex-grow relative">
@@ -982,7 +997,7 @@ function ItemCard({
           />
         ) : (
           <div
-            className={`w-full h-full flex items-center justify-center ${isDarkMode ? "bg-neutral-700" : "bg-slate-100"}`}
+            className={`w-full h-full flex items-center justify-center ${themeClassNames.cardBgSubtleColor}`}
           >
             {item.hasError ? (
               <AlertCircle size={32} className="text-red-500" />
@@ -997,16 +1012,16 @@ function ItemCard({
         {draggable && (
           <GripVertical
             size={18}
-            className={`absolute top-1 right-1 ${isDarkMode ? "text-white/70" : "text-black/60"} opacity-50 group-hover:opacity-100 transition-opacity`}
+            className={`absolute top-1 right-1 ${themeClassNames.iconSecondaryColor} opacity-50 group-hover:opacity-100 transition-opacity`}
           />
         )}
       </div>
 
       <div
-        className={`p-2 w-full ${isDarkMode ? "bg-black/50 backdrop-blur-sm" : "bg-black/30 backdrop-blur-sm"}`}
+        className={`p-2 w-full ${themeClassNames.cardTextOverlayBgColor} backdrop-blur-sm`}
       >
         <p
-          className={`text-xs truncate font-medium ${isDarkMode ? "text-slate-100" : "text-white"}`}
+          className={`text-xs truncate font-medium ${themeClassNames.cardTextColor}`}
         >
           {item.name}
         </p>
