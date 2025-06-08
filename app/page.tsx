@@ -495,7 +495,7 @@ function App() {
       <div className="w-full max-w-5xl xl:max-w-6xl">
         <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <h1 className="text-3xl sm:text-4xl font-bold text-[var(--accent-color)] transition-colors duration-300">
-            TierZen
+            TierZen by Unknown
           </h1>
           <Toolbar
             isEditMode={isEditMode}
@@ -571,7 +571,7 @@ function App() {
         <footer
           className={`mt-8 text-center text-sm ${themeClassNames.secondaryTextColor}`}
         >
-          <p>TierZen by Gemini. Drag and drop items in 'Rank' mode.</p>
+          <p>TierZen by Unknown. Drag and drop items in 'Rank' mode.</p>
         </footer>
       </div>
     </div>

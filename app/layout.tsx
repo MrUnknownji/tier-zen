@@ -8,8 +8,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TierZen Tier List Maker",
+  title: "TierZen by Unknown - Tier List Maker",
   description: "Create and share tier lists easily with TierZen.",
+  icons: {
+    icon: '/globe.svg', // TODO: Replace with your custom favicon.ico or other image file in /public and update this path.
+  },
 };
 
 export default function RootLayout({
