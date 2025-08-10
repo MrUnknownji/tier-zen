@@ -36,6 +36,7 @@ export default function Toolbar({
   setIsDarkMode,
   setShowAddItemModal,
   setItemToEdit,
+  themeClassNames,
   exportToPng,
   exportToXml,
 }: ToolbarProps) {
