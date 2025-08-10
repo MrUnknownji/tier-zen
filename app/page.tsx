@@ -1,93 +1,20 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  PlusCircle,
-  Edit3,
-  Trash2,
-  CheckSquare,
-  Rows,
-  Columns,
-  Palette,
-  Sun,
-  Moon,
-  RotateCcw,
-  ImagePlus,
-  GripVertical,
-  UploadCloud,
-  Link2,
-  Image as ImageIcon,
-  AlertCircle,
-  Download,
-} from "lucide-react";
+import { gsap } from "gsap";
+import { Draggable } from "gsap/Draggable";
 import { toPng } from "html-to-image";
 import { saveAs } from "file-saver";
-
-const generateId = () =>
-  `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-const getContrastingTextColor = (hexColor?: string): string => {
-  if (!hexColor) return "#000000";
-  const hex = hexColor.replace("#", "");
-  if (hex.length !== 6 && hex.length !== 3) return "#000000";
-  let r, g, b;
-  if (hex.length === 3) {
-    r = parseInt(hex.substring(0, 1).repeat(2), 16);
-    g = parseInt(hex.substring(1, 2).repeat(2), 16);
-    b = parseInt(hex.substring(2, 3).repeat(2), 16);
-  } else {
-    r = parseInt(hex.substring(0, 2), 16);
-    g = parseInt(hex.substring(2, 4), 16);
-    b = parseInt(hex.substring(4, 6), 16);
-  }
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000000" : "#FFFFFF";
-};
-
-interface Item {
-  id: string;
-  name: string;
-  imageUrl?: string;
-  isPlaceholder?: boolean;
-  hasError?: boolean;
-}
-
-interface Tier {
-  id: string;
-  name: string;
-  color: string;
-  textColor: string;
-  items: Item[];
-}
-
-interface DraggedItemInfo {
-  item: Item;
-  sourceTierId: string | "unranked";
-  sourceIndex: number;
-}
-
-interface ThemeClassNames {
-  bgColor: string;
-  textColor: string;
-  cardBgColor: string;
-  borderColor: string;
-  inputBgColor: string;
-  inputBorderColor: string;
-  inputFocusBorderColor: string;
-  placeholderColor: string;
-  secondaryTextColor: string;
-  buttonInactiveBg: string;
-  buttonInactiveText: string;
-  buttonInactiveHoverBg: string;
-  modalOverlayBg: string;
-  tabContainerBg: string;
-  cardHoverBgColor: string;
-  cardBgSubtleColor: string;
-  iconSecondaryColor: string;
-  cardTextOverlayBgColor: string;
-  cardTextColor: string;
-  inputBgTransparentColor: string;
-  inputFgColor: string;
-}
+import {
+  Item,
+  Tier,
+  DraggedItemInfo,
+  ThemeClassNames,
+} from "./lib/types";
+import { generateId, getContrastingTextColor } from "./lib/utils";
+import Toolbar from "./components/Toolbar";
+import TierRow from "./components/TierRow";
+import UnrankedItemsContainer from "./components/UnrankedItemsContainer";
+import AddItemModal from "./components/AddItemModal";
 
 const initialTiersData: Tier[] = [
   {
@@ -135,17 +62,18 @@ function App() {
     initialUnrankedItemsData,
   );
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
-  const [draggedItem, setDraggedItem] = useState<DraggedItemInfo | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [showAddItemModal, setShowAddItemModal] = useState<boolean>(false);
   const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
-  const [isDraggingGlobal, setIsDraggingGlobal] = useState<boolean>(false);
-  const [draggedOverTierId, setDraggedOverTierId] = useState<string | null>(
-    null,
-  );
-  const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
+  const [draggedItem, setDraggedItem] = useState<DraggedItemInfo | null>(null);
+  const [dropPreview, setDropPreview] = useState<{
+    tierId: string | "unranked";
+    index: number;
+  } | null>(null);
+  const [justAddedTierId, setJustAddedTierId] = useState<string | null>(null);
 
   useEffect(() => {
+    gsap.registerPlugin(Draggable);
     if (typeof window !== "undefined") {
       const savedTiers = localStorage.getItem("tierListTiersV4");
       setTiers(savedTiers ? JSON.parse(savedTiers) : initialTiersData);
@@ -154,7 +82,14 @@ function App() {
         savedUnranked ? JSON.parse(savedUnranked) : initialUnrankedItemsData,
       );
       const savedTheme = localStorage.getItem("tierListThemeV4");
-      if (savedTheme !== null) setIsDarkMode(JSON.parse(savedTheme));
+      if (savedTheme !== null) {
+        setIsDarkMode(JSON.parse(savedTheme));
+      } else {
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        setIsDarkMode(prefersDark);
+      }
       const savedMode = localStorage.getItem("tierListModeV4");
       if (savedMode !== null) setIsEditMode(JSON.parse(savedMode));
     }
@@ -301,6 +236,7 @@ function App() {
       items: [],
     };
     setTiers([...tiers, newTier]);
+    setJustAddedTierId(newTier.id);
   };
 
   const updateTier = (
@@ -396,81 +332,75 @@ function App() {
     setShowAddItemModal(true);
   };
 
-  const onDragStartItem = (
-    item: Item,
-    sourceTierId: string | "unranked",
-    sourceIndex: number,
+  const handleDragStart = (item: Item, sourceTierId: string | "unranked") => {
+    const sourceTier =
+      sourceTierId === "unranked"
+        ? { items: unrankedItems }
+        : tiers.find((t) => t.id === sourceTierId);
+    if (!sourceTier) return;
+    const sourceIndex = sourceTier.items.findIndex((i) => i.id === item.id);
+    setDraggedItem({ item, sourceTierId, sourceIndex });
+  };
+
+  const handleDrag = (
+    hitTestResult: { tierId: string | "unranked"; index: number } | null,
   ) => {
-    if (!isEditMode) {
-      setDraggedItem({ item, sourceTierId, sourceIndex });
-      setIsDraggingGlobal(true);
+    if (hitTestResult) {
+      setDropPreview(hitTestResult);
+    } else {
+      setDropPreview(null);
     }
   };
 
-  const onDragEndItem = () => {
-    setIsDraggingGlobal(false);
-    setDraggedOverTierId(null);
-    setDropPreviewIndex(null);
-    setDraggedItem(null);
-  };
+  const handleDrop = () => {
+    if (!draggedItem || !dropPreview) {
+      setDraggedItem(null);
+      setDropPreview(null);
+      return;
+    }
 
-  const handleDragOverTier = (tierId: string | "unranked", index?: number) => {
-    if (!isDraggingGlobal || isEditMode) return;
-    setDraggedOverTierId(tierId);
-    setDropPreviewIndex(index ?? null);
-  };
+    const { item: movedItem, sourceTierId } = draggedItem;
+    const { tierId: targetTierId, index: targetIndex } = dropPreview;
 
-  const onDragOverItem = (e: React.DragEvent<HTMLDivElement>) =>
-    e.preventDefault();
-
-  const onDropItem = (
-    targetTierId: string | "unranked",
-    targetIndexInput?: number,
-  ) => {
-    if (!draggedItem || isEditMode) return;
-    const { item: movedItem, sourceTierId: srcTierId } = draggedItem;
-    const getTargetLength = () =>
-      targetTierId === "unranked"
-        ? unrankedItems.length
-        : (tiers.find((t) => t.id === targetTierId)?.items.length ?? 0);
-    const targetIndex = targetIndexInput ?? getTargetLength();
-    const itemToMove = { ...movedItem, hasError: false };
-
-    if (srcTierId === "unranked")
-      setUnrankedItems((prev) => prev.filter((i) => i.id !== itemToMove.id));
-    else
-      setTiers((prevTiers) =>
-        prevTiers.map((tier) =>
-          tier.id === srcTierId
-            ? {
-                ...tier,
-                items: tier.items.filter((i) => i.id !== itemToMove.id),
-              }
-            : tier,
-        ),
-      );
-
-    if (targetTierId === "unranked")
-      setUnrankedItems((prev) => {
-        const ni = [...prev];
-        ni.splice(targetIndex, 0, itemToMove);
-        return ni;
-      });
-    else
+    // Remove from source
+    if (sourceTierId === "unranked") {
+      setUnrankedItems((prev) => prev.filter((i) => i.id !== movedItem.id));
+    } else {
       setTiers((prevTiers) =>
         prevTiers.map((tier) => {
-          if (tier.id === targetTierId) {
-            const ni = [...tier.items];
-            ni.splice(targetIndex, 0, itemToMove);
-            return { ...tier, items: ni };
+          if (tier.id === sourceTierId) {
+            return {
+              ...tier,
+              items: tier.items.filter((i) => i.id !== movedItem.id),
+            };
           }
           return tier;
         }),
       );
+    }
+
+    // Add to destination
+    if (targetTierId === "unranked") {
+      setUnrankedItems((prev) => {
+        const newItems = [...prev];
+        newItems.splice(targetIndex, 0, movedItem);
+        return newItems;
+      });
+    } else {
+      setTiers((prevTiers) =>
+        prevTiers.map((tier) => {
+          if (tier.id === targetTierId) {
+            const newItems = [...tier.items];
+            newItems.splice(targetIndex, 0, movedItem);
+            return { ...tier, items: newItems };
+          }
+          return tier;
+        }),
+      );
+    }
 
     setDraggedItem(null);
-    setDraggedOverTierId(null);
-    setDropPreviewIndex(null);
+    setDropPreview(null);
   };
 
   const resetAll = () => {
@@ -489,13 +419,12 @@ function App() {
 
   return (
     <div
-      className={`min-h-screen ${themeClassNames.bgColor} ${themeClassNames.textColor} font-inter p-4 sm:p-6 md:p-8 transition-colors duration-300 flex flex-col items-center`}
-      onDragEnd={onDragEndItem}
+      className={`min-h-screen ${themeClassNames.bgColor} ${themeClassNames.textColor} font-inter transition-colors duration-300`}
     >
-      <div className="w-full max-w-5xl xl:max-w-6xl">
-        <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <header className="sticky top-0 z-10 p-4 sm:p-6 md:p-8 bg-[var(--background)]/80 backdrop-blur-sm border-b border-[var(--border-color)]">
+        <div className="w-full max-w-5xl xl:max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <h1 className="text-3xl sm:text-4xl font-bold text-[var(--accent-color)] transition-colors duration-300">
-            TierZen by Unknown
+            TierZen
           </h1>
           <Toolbar
             isEditMode={isEditMode}
@@ -510,10 +439,10 @@ function App() {
             exportToPng={exportToPng}
             exportToXml={exportToXml}
           />
-        </header>
-        <div id="tierListContent" className={`${themeClassNames.bgColor} p-4`}>
-          {" "}
-          {/* Added padding for better export */}
+        </div>
+      </header>
+      <div className="w-full max-w-5xl xl:max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
+        <div id="tierListContent" className={`${themeClassNames.bgColor}`}>
           <main className="space-y-3 sm:space-y-4">
             {tiers.map((tier) => (
               <TierRow
@@ -522,38 +451,34 @@ function App() {
                 updateTier={updateTier}
                 deleteTier={deleteTier}
                 isEditMode={isEditMode}
-                onDragStartItem={onDragStartItem}
-                onDragOverItem={onDragOverItem}
-                onDropItem={(idx) => onDropItem(tier.id, idx)}
                 deleteItem={deleteItem}
                 openEditItemModal={openEditItemModal}
                 themeClassNames={themeClassNames}
                 isDarkMode={isDarkMode}
-                isDraggingGlobal={isDraggingGlobal}
-                draggedItem={draggedItem}
-                draggedOverTierId={draggedOverTierId}
-                dropPreviewIndex={dropPreviewIndex}
-                handleDragOverTier={handleDragOverTier}
                 handleItemError={handleItemError}
+                handleDragStart={handleDragStart}
+                handleDrag={handleDrag}
+                handleDrop={handleDrop}
+                draggedItem={draggedItem}
+                dropPreview={dropPreview}
+                justAddedTierId={justAddedTierId}
+                setJustAddedTierId={setJustAddedTierId}
               />
             ))}
           </main>
           <UnrankedItemsContainer
             items={unrankedItems}
             isEditMode={isEditMode}
-            onDragStartItem={onDragStartItem}
-            onDragOverItem={onDragOverItem}
-            onDropItem={(idx) => onDropItem("unranked", idx)}
             deleteItem={deleteItem}
             openEditItemModal={openEditItemModal}
             themeClassNames={themeClassNames}
             isDarkMode={isDarkMode}
-            isDraggingGlobal={isDraggingGlobal}
-            draggedItem={draggedItem}
-            draggedOverTierId={draggedOverTierId}
-            dropPreviewIndex={dropPreviewIndex}
-            handleDragOverTier={handleDragOverTier}
             handleItemError={handleItemError}
+            handleDragStart={handleDragStart}
+            handleDrag={handleDrag}
+            handleDrop={handleDrop}
+            draggedItem={draggedItem}
+            dropPreview={dropPreview}
           />
           {showAddItemModal && (
             <AddItemModal
@@ -578,896 +503,8 @@ function App() {
   );
 }
 
-interface ToolbarProps {
-  isEditMode: boolean;
-  setIsEditMode: (v: boolean) => void;
-  addTier: () => void;
-  resetAll: () => void;
-  isDarkMode: boolean;
-  setIsDarkMode: (v: boolean) => void;
-  setShowAddItemModal: (v: boolean) => void;
-  setItemToEdit: (i: Item | null) => void;
-  themeClassNames: ThemeClassNames;
-  exportToPng: () => void;
-  exportToXml: () => void;
-}
 
-function Toolbar({
-  isEditMode,
-  setIsEditMode,
-  addTier,
-  resetAll,
-  isDarkMode,
-  setIsDarkMode,
-  setShowAddItemModal,
-  setItemToEdit,
-  themeClassNames,
-  exportToPng,
-  exportToXml,
-}: ToolbarProps) {
-  const btnBase = `p-2.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:ring-offset-1 focus:ring-offset-[var(--raw-card-bg-value)]`;
-  const active = `bg-[var(--accent-color)] text-black`;
-  const inactive = `${themeClassNames.buttonInactiveBg} ${themeClassNames.buttonInactiveText} ${themeClassNames.buttonInactiveHoverBg}`;
 
-  return (
-    <div
-      className={`flex flex-wrap gap-2 items-center justify-center sm:justify-end p-2 rounded-lg shadow ${themeClassNames.cardBgColor}`}
-    >
-      <div
-        className={`flex rounded-lg border ${themeClassNames.borderColor} overflow-hidden`}
-      >
-        <button
-          onClick={() => setIsEditMode(true)}
-          className={`${btnBase} rounded-none rounded-l-md ${isEditMode ? active : inactive}`}
-          title="Edit Mode: Modify tiers, add/edit/delete items."
-        >
-          <Edit3 size={18} />
-        </button>
-        <button
-          onClick={() => setIsEditMode(false)}
-          className={`${btnBase} rounded-none rounded-r-md ${!isEditMode ? active : inactive}`}
-          title="Rank Mode: Drag and drop items between tiers."
-        >
-          <Rows size={18} />
-        </button>
-      </div>
-      {isEditMode && (
-        <>
-          <button
-            onClick={addTier}
-            className={`${btnBase} ${inactive}`}
-            title="Add a new tier row to the list."
-          >
-            <PlusCircle size={18} /> Add Tier
-          </button>
-          <button
-            onClick={() => {
-              setItemToEdit(null);
-              setShowAddItemModal(true);
-            }}
-            className={`${btnBase} ${inactive}`}
-            title="Add a new item to the Unranked Items pool."
-          >
-            <ImagePlus size={18} /> Add Item
-          </button>
-          <button
-            onClick={resetAll}
-            className={`${btnBase} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500`}
-            title="Reset all tiers and items to default. This action cannot be undone!"
-          >
-            <RotateCcw size={18} /> Reset All
-          </button>
-        </>
-      )}
-      {!isEditMode && <div className="w-px h-6 bg-transparent mx-1"></div>}
-      <button
-        onClick={exportToPng}
-        className={`${btnBase} ${inactive}`}
-        title="Export tier list as PNG"
-      >
-        <Download size={18} /> Export PNG
-      </button>
-      <button
-        onClick={exportToXml}
-        className={`${btnBase} ${inactive}`}
-        title="Export tier list data as XML"
-      >
-        <Download size={18} /> Export XML
-      </button>
-      <button
-        onClick={() => setIsDarkMode(!isDarkMode)}
-        className={`${btnBase} ${inactive}`}
-        title={`Switch to ${isDarkMode ? "Light" : "Dark"} Theme`}
-      >
-        {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
-    </div>
-  );
-}
 
-interface TierRowProps {
-  tier: Tier;
-  updateTier: (
-    id: string,
-    props: Partial<Omit<Tier, "id" | "items" | "textColor">>,
-  ) => void;
-  deleteTier: (id: string) => void;
-  isEditMode: boolean;
-  onDragStartItem: (item: Item, srcTierId: string, srcIdx: number) => void;
-  onDragOverItem: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDropItem: (targetIdx?: number) => void;
-  deleteItem: (id: string) => void;
-  openEditItemModal: (item: Item) => void;
-  themeClassNames: ThemeClassNames;
-  isDarkMode: boolean;
-  isDraggingGlobal: boolean;
-  draggedItem: DraggedItemInfo | null;
-  draggedOverTierId: string | null;
-  dropPreviewIndex: number | null;
-  handleDragOverTier: (tierId: string, index?: number) => void;
-  handleItemError: (itemId: string, isError: boolean) => void;
-}
 
-function TierRow({
-  tier,
-  updateTier,
-  deleteTier,
-  isEditMode,
-  onDragStartItem,
-  onDragOverItem,
-  onDropItem,
-  deleteItem,
-  openEditItemModal,
-  themeClassNames,
-  isDarkMode,
-  isDraggingGlobal,
-  draggedItem,
-  draggedOverTierId,
-  dropPreviewIndex,
-  handleDragOverTier,
-  handleItemError,
-}: TierRowProps) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(tier.name);
-  useEffect(() => {
-    setTempName(tier.name);
-  }, [tier.name]);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setTempName(e.target.value);
-  const saveName = () => {
-    tempName.trim()
-      ? updateTier(tier.id, { name: tempName.trim() })
-      : setTempName(tier.name);
-    setIsEditingName(false);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") saveName();
-    if (e.key === "Escape") {
-      setTempName(tier.name);
-      setIsEditingName(false);
-    }
-  };
-  const handleColor = (e: React.ChangeEvent<HTMLInputElement>) =>
-    updateTier(tier.id, { color: e.target.value });
-
-  const isCurrentDropTarget = draggedOverTierId === tier.id;
-  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex-grow flex flex-wrap items-start p-2 border-2 rounded-r-lg transition-all duration-150`;
-
-  const highlightClasses =
-    isDraggingGlobal && !isEditMode
-      ? isCurrentDropTarget
-        ? `border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] border-solid`
-        : `border-dashed border-[var(--accent-color)]/50`
-      : `border-dashed ${themeClassNames.borderColor}`;
-
-  const itemsWithPreview = [...tier.items];
-  if (
-    isCurrentDropTarget &&
-    dropPreviewIndex !== null &&
-    !isEditMode &&
-    draggedItem &&
-    draggedItem.item.id !== "drop-preview-placeholder"
-  ) {
-    itemsWithPreview.splice(dropPreviewIndex, 0, {
-      id: "drop-preview-placeholder",
-      name: "PREVIEW",
-      isPlaceholder: true,
-      imageUrl: draggedItem.item.imageUrl,
-    });
-  }
-
-  return (
-    <div
-      className={`flex items-stretch rounded-lg shadow-md transition-shadow duration-300 hover:shadow-xl mb-3 ${themeClassNames.cardBgColor}`}
-      onDragOver={(e) => {
-        onDragOverItem(e);
-        if (isEditMode || !isDraggingGlobal) return;
-        handleDragOverTier(tier.id, tier.items.length);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isEditMode || !isDraggingGlobal) return;
-        const idx =
-          isCurrentDropTarget && dropPreviewIndex !== null
-            ? dropPreviewIndex
-            : tier.items.length;
-        onDropItem(idx);
-      }}
-    >
-      <div
-        className="w-24 sm:w-28 md:w-32 flex flex-col items-center justify-center p-2 sm:p-3 text-center rounded-l-lg transition-colors"
-        style={{ backgroundColor: tier.color, color: tier.textColor }}
-      >
-        {isEditMode && isEditingName ? (
-          <input
-            type="text"
-            value={tempName}
-            onChange={handleNameChange}
-            onBlur={saveName}
-            onKeyDown={handleKeyDown}
-            className={`w-full text-sm p-1 rounded ${themeClassNames.inputBgTransparentColor} ${themeClassNames.inputFgColor} focus:outline-none ring-1 ring-[var(--accent-color)] dark:ring-gray-300`}
-            autoFocus
-          />
-        ) : (
-          <h2
-            className="text-md sm:text-lg font-semibold break-words w-full cursor-pointer"
-            onClick={() => isEditMode && setIsEditingName(true)}
-            title={isEditMode ? "Click to edit tier name" : tier.name}
-          >
-            {tier.name}
-          </h2>
-        )}
-        {isEditMode && (
-          <div className="mt-2 flex items-center gap-2 sm:gap-3">
-            <label
-              htmlFor={`color-${tier.id}`}
-              className="cursor-pointer group relative"
-              title="Change tier color"
-            >
-              <Palette
-                size={18}
-                className="opacity-70 group-hover:opacity-100"
-              />
-              <input
-                id={`color-${tier.id}`}
-                type="color"
-                value={tier.color}
-                onChange={handleColor}
-                className="absolute opacity-0 w-0 h-0"
-              />
-            </label>
-            <button
-              onClick={() => {
-                const msg = tier.items.length
-                  ? `Delete tier "${tier.name}" and move its ${tier.items.length} item(s) to Unranked?`
-                  : `Delete tier "${tier.name}"? This cannot be undone.`;
-                if (window.confirm(msg)) deleteTier(tier.id);
-              }}
-              className="text-red-500 hover:text-red-700"
-              title="Delete tier"
-            >
-              <Trash2 size={16} className="opacity-70 hover:opacity-100" />
-            </button>
-          </div>
-        )}
-      </div>
-      <div
-        className={`${baseDropClasses} ${highlightClasses} relative items-container`}
-        onDragOver={(e) => {
-          onDragOverItem(e);
-          e.stopPropagation();
-          if (isEditMode || !isDraggingGlobal) return;
-          const el = e.currentTarget as HTMLDivElement;
-          const items = Array.from(el.children).filter(
-            (c) => !c.classList.contains("drop-preview-placeholder-item"),
-          );
-          let newIdx = items.length;
-          for (let i = 0; i < items.length; i++) {
-            const r = (items[i] as HTMLElement).getBoundingClientRect();
-            if (e.clientX < r.left + r.width / 2) {
-              newIdx = i;
-              break;
-            }
-          }
-          handleDragOverTier(tier.id, newIdx);
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (isEditMode || !isDraggingGlobal) return;
-          const idx =
-            isCurrentDropTarget && dropPreviewIndex !== null
-              ? dropPreviewIndex
-              : tier.items.length;
-          onDropItem(idx);
-        }}
-      >
-        {itemsWithPreview.length === 0 && !isDraggingGlobal && !isEditMode && (
-          <div
-            className={`w-full h-full flex items-center justify-center ${themeClassNames.secondaryTextColor} italic text-sm`}
-          >
-            Drag items here
-          </div>
-        )}
-        {itemsWithPreview.length === 0 && isEditMode && (
-          <div
-            className={`w-full h-full flex items-center justify-center ${themeClassNames.secondaryTextColor} italic text-sm`}
-          >
-            Add items via "Add Item" or drag from Unranked
-          </div>
-        )}
-
-        {itemsWithPreview.map((item) =>
-          item.isPlaceholder ? (
-            <div
-              key={item.id}
-              className={`drop-preview-placeholder-item m-1 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-lg border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center opacity-70`}
-            >
-              <ImageIcon
-                size={32}
-                className="text-[var(--accent-color)] opacity-50"
-              />
-            </div>
-          ) : (
-            <ItemCard
-              key={item.id}
-              {...{
-                item,
-                isEditMode,
-                onDragStart: () =>
-                  onDragStartItem(
-                    item,
-                    tier.id,
-                    tier.items.findIndex((i) => i.id === item.id),
-                  ),
-                onDragOverItem,
-                onDrop: () =>
-                  onDropItem(tier.items.findIndex((i) => i.id === item.id)),
-                deleteItem,
-                openEditItemModal,
-                themeClassNames,
-                isDarkMode,
-                handleItemError,
-              }}
-            />
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface ItemCardProps {
-  item: Item;
-  isEditMode: boolean;
-  onDragStart: () => void;
-  deleteItem: (id: string) => void;
-  openEditItemModal: (item: Item) => void;
-  onDragOverItem: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDrop: () => void;
-  themeClassNames: ThemeClassNames;
-  isDarkMode: boolean;
-  handleItemError: (itemId: string, isError: boolean) => void;
-}
-
-function ItemCard({
-  item,
-  isEditMode,
-  onDragStart,
-  deleteItem,
-  openEditItemModal,
-  onDragOverItem,
-  onDrop,
-  themeClassNames,
-  isDarkMode,
-  handleItemError,
-}: ItemCardProps) {
-  const draggable = !isEditMode;
-
-  const onImageError = () => {
-    handleItemError(item.id, true);
-  };
-
-  return (
-    <div
-      draggable={draggable}
-      onDragStart={draggable ? onDragStart : undefined}
-      onDragOver={draggable ? onDragOverItem : undefined}
-      onDrop={
-        draggable
-          ? (e: React.DragEvent<HTMLDivElement>) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onDrop();
-            }
-          : undefined
-      }
-      className={`m-1 ${themeClassNames.cardBgColor} rounded-lg shadow-md w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} flex flex-col relative transition-all duration-150 ${draggable ? "cursor-grab hover:shadow-xl transform hover:-translate-y-0.5" : "cursor-default"} group overflow-hidden`}
-      title={item.name}
-    >
-      <div className="flex-grow relative">
-        {item.imageUrl && !item.hasError ? (
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            onError={onImageError}
-          />
-        ) : (
-          <div
-            className={`w-full h-full flex items-center justify-center ${themeClassNames.cardBgSubtleColor}`}
-          >
-            {item.hasError ? (
-              <AlertCircle size={32} className="text-red-500" />
-            ) : (
-              <ImageIcon
-                size={32}
-                className={`${themeClassNames.secondaryTextColor} opacity-50`}
-              />
-            )}
-          </div>
-        )}
-        {draggable && (
-          <GripVertical
-            size={18}
-            className={`absolute top-1 right-1 ${themeClassNames.iconSecondaryColor} opacity-50 group-hover:opacity-100 transition-opacity`}
-          />
-        )}
-      </div>
-
-      <div
-        className={`p-2 w-full ${themeClassNames.cardTextOverlayBgColor} backdrop-blur-sm`}
-      >
-        <p
-          className={`text-xs truncate font-medium ${themeClassNames.cardTextColor}`}
-        >
-          {item.name}
-        </p>
-      </div>
-
-      {isEditMode && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-150">
-          <button
-            onClick={() => openEditItemModal(item)}
-            className={`p-2 bg-white/90 dark:bg-neutral-600/90 backdrop-blur-sm rounded-full text-[var(--accent-color)] hover:bg-opacity-100`}
-            title={`Edit ${item.name}`}
-          >
-            <Edit3 size={14} />
-          </button>
-          <button
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Are you sure you want to delete "${item.name}"? This cannot be undone.`,
-                )
-              )
-                deleteItem(item.id);
-            }}
-            className="p-2 bg-white/90 dark:bg-neutral-600/90 backdrop-blur-sm rounded-full text-red-500 hover:text-red-700 hover:bg-opacity-100"
-            title={`Delete ${item.name}`}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface UnrankedItemsContainerProps {
-  items: Item[];
-  isEditMode: boolean;
-  onDragStartItem: (item: Item, srcTierId: string, srcIdx: number) => void;
-  onDragOverItem: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDropItem: (targetIdx?: number) => void;
-  deleteItem: (id: string) => void;
-  openEditItemModal: (item: Item) => void;
-  themeClassNames: ThemeClassNames;
-  isDarkMode: boolean;
-  isDraggingGlobal: boolean;
-  draggedItem: DraggedItemInfo | null;
-  draggedOverTierId: string | null;
-  dropPreviewIndex: number | null;
-  handleDragOverTier: (tierId: string | "unranked", index?: number) => void;
-  handleItemError: (itemId: string, isError: boolean) => void;
-}
-
-function UnrankedItemsContainer({
-  items,
-  isEditMode,
-  onDragStartItem,
-  onDragOverItem,
-  onDropItem,
-  deleteItem,
-  openEditItemModal,
-  themeClassNames,
-  isDarkMode,
-  isDraggingGlobal,
-  draggedItem,
-  draggedOverTierId,
-  dropPreviewIndex,
-  handleDragOverTier,
-  handleItemError,
-}: UnrankedItemsContainerProps) {
-  const isCurrentDropTarget = draggedOverTierId === "unranked";
-  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex flex-wrap items-start p-3 border-2 rounded-lg mt-6 transition-all`;
-
-  const highlightClasses =
-    isDraggingGlobal && !isEditMode
-      ? isCurrentDropTarget
-        ? `border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] border-solid`
-        : `border-dashed border-[var(--accent-color)]/50`
-      : `border-dashed ${themeClassNames.borderColor}`;
-
-  const itemsWithPreview = [...items];
-  if (
-    isCurrentDropTarget &&
-    dropPreviewIndex !== null &&
-    !isEditMode &&
-    draggedItem &&
-    draggedItem.item.id !== "drop-preview-placeholder-unranked"
-  ) {
-    itemsWithPreview.splice(dropPreviewIndex, 0, {
-      id: "drop-preview-placeholder-unranked",
-      name: "PREVIEW_U",
-      isPlaceholder: true,
-      imageUrl: draggedItem.item.imageUrl,
-    });
-  }
-
-  return (
-    <div
-      className={`p-4 rounded-lg shadow-md mt-6 sm:mt-8 ${themeClassNames.cardBgColor}`}
-      onDragOver={(e) => {
-        onDragOverItem(e);
-        if (isEditMode || !isDraggingGlobal) return;
-        handleDragOverTier("unranked", items.length);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isEditMode || !isDraggingGlobal) return;
-        const idx =
-          isCurrentDropTarget && dropPreviewIndex !== null
-            ? dropPreviewIndex
-            : items.length;
-        onDropItem(idx);
-      }}
-    >
-      <h3
-        className={`text-lg sm:text-xl font-semibold mb-3 text-center ${themeClassNames.textColor}`}
-      >
-        <Columns size={20} className="inline mr-2 align-text-bottom" /> Unranked
-        Items
-      </h3>
-      <div
-        className={`${baseDropClasses} ${highlightClasses} justify-center sm:justify-start gap-1 relative items-container`}
-        onDragOver={(e) => {
-          onDragOverItem(e);
-          e.stopPropagation();
-          if (isEditMode || !isDraggingGlobal) return;
-          const el = e.currentTarget as HTMLDivElement;
-          const itemsArr = Array.from(el.children).filter(
-            (c) => !c.classList.contains("drop-preview-placeholder-item"),
-          );
-          let newIdx = itemsArr.length;
-          for (let i = 0; i < itemsArr.length; i++) {
-            const r = (itemsArr[i] as HTMLElement).getBoundingClientRect();
-            if (e.clientX < r.left + r.width / 2) {
-              newIdx = i;
-              break;
-            }
-          }
-          handleDragOverTier("unranked", newIdx);
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (isEditMode || !isDraggingGlobal) return;
-          const idx =
-            isCurrentDropTarget && dropPreviewIndex !== null
-              ? dropPreviewIndex
-              : items.length;
-          onDropItem(idx);
-        }}
-      >
-        {itemsWithPreview.length === 0 && !isDraggingGlobal && !isEditMode && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            All items ranked! Drag items here or from tiers.
-          </p>
-        )}
-        {itemsWithPreview.length === 0 && isEditMode && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            Add new items using the "Add Item" button above.
-          </p>
-        )}
-        {itemsWithPreview.length === 0 && isDraggingGlobal && !isEditMode && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            Drop item here to unrank it.
-          </p>
-        )}
-
-        {itemsWithPreview.map((item) =>
-          item.isPlaceholder ? (
-            <div
-              key={item.id}
-              className={`drop-preview-placeholder-item m-1 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-lg border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center opacity-70`}
-            >
-              <ImageIcon
-                size={32}
-                className="text-[var(--accent-color)] opacity-50"
-              />
-            </div>
-          ) : (
-            <ItemCard
-              key={item.id}
-              {...{
-                item,
-                isEditMode,
-                onDragStart: () =>
-                  onDragStartItem(
-                    item,
-                    "unranked",
-                    items.findIndex((i) => i.id === item.id),
-                  ),
-                onDragOverItem,
-                onDrop: () =>
-                  onDropItem(items.findIndex((i) => i.id === item.id)),
-                deleteItem,
-                openEditItemModal,
-                themeClassNames,
-                isDarkMode,
-                handleItemError,
-              }}
-            />
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface AddItemModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSaveItem: (data: Omit<Item, "id">, id?: string) => void;
-  itemToEdit: Item | null;
-  themeClassNames: ThemeClassNames;
-}
-
-function AddItemModal({
-  isOpen,
-  onClose,
-  onSaveItem,
-  itemToEdit,
-  themeClassNames,
-}: AddItemModalProps) {
-  const [name, setName] = useState("");
-  const [imageUrlInput, setImageUrlInput] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageInputMode, setImageInputMode] = useState<"url" | "upload">("url");
-
-  useEffect(() => {
-    if (isOpen) {
-      if (itemToEdit) {
-        setName(itemToEdit.name);
-        if (
-          itemToEdit.imageUrl &&
-          itemToEdit.imageUrl.startsWith("data:image")
-        ) {
-          setImageInputMode("upload");
-          setImagePreview(itemToEdit.imageUrl);
-          setImageUrlInput("");
-        } else {
-          setImageInputMode("url");
-          setImageUrlInput(itemToEdit.imageUrl || "");
-          setImagePreview(itemToEdit.imageUrl || null);
-        }
-      } else {
-        setName("");
-        setImageUrlInput("");
-        setImagePreview(null);
-        setImageInputMode("url");
-      }
-    }
-  }, [itemToEdit, isOpen]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setImageUrlInput("");
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      alert("Item name is required.");
-      return;
-    }
-    let finalImageUrl =
-      imageInputMode === "upload" && imagePreview?.startsWith("data:image")
-        ? imagePreview
-        : imageUrlInput;
-    const itemData = { name, imageUrl: finalImageUrl || undefined };
-    itemToEdit ? onSaveItem(itemData, itemToEdit.id) : onSaveItem(itemData);
-  };
-
-  if (!isOpen) return null;
-
-  const inputClasses = `w-full p-3 border rounded-lg ${themeClassNames.inputBgColor} ${themeClassNames.inputBorderColor} ${themeClassNames.textColor} ${themeClassNames.placeholderColor} focus:ring-1 focus:ring-[var(--accent-color)] focus:${themeClassNames.inputFocusBorderColor} transition-colors`;
-  const tabButtonBase = `flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:ring-offset-1 focus:ring-offset-[var(--raw-card-bg-value)]`;
-  const activeTabClasses = `bg-[var(--accent-color)] text-black shadow-sm`;
-  const inactiveTabClasses = `${themeClassNames.buttonInactiveBg} ${themeClassNames.buttonInactiveText} ${themeClassNames.buttonInactiveHoverBg}`;
-
-  return (
-    <div
-      className={`fixed inset-0 ${themeClassNames.modalOverlayBg} backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300`}
-    >
-      <div
-        className={`${themeClassNames.cardBgColor} p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100`}
-      >
-        <h2
-          className={`text-2xl sm:text-3xl font-semibold mb-6 ${themeClassNames.textColor} text-center`}
-        >
-          {itemToEdit ? "Edit Item" : "Add New Item"}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="itemName"
-              className={`block text-sm font-medium mb-1.5 ${themeClassNames.textColor}`}
-            >
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="itemName"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter item name"
-              required
-              className={inputClasses}
-            />
-          </div>
-          <div>
-            <label
-              className={`block text-sm font-medium mb-2 ${themeClassNames.textColor}`}
-            >
-              Image Source
-            </label>
-            <div
-              className={`flex gap-1 p-1 rounded-lg mb-3 ${themeClassNames.tabContainerBg}`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setImageInputMode("url");
-                  if (imageUrlInput) setImagePreview(imageUrlInput);
-                  else if (!itemToEdit?.imageUrl?.startsWith("data:"))
-                    setImagePreview(null);
-                }}
-                className={`${tabButtonBase} ${imageInputMode === "url" ? activeTabClasses : inactiveTabClasses}`}
-              >
-                <Link2 size={16} className="inline mr-1.5" /> URL
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setImageInputMode("upload");
-                  if (!imagePreview?.startsWith("data:image"))
-                    setImagePreview(null);
-                }}
-                className={`${tabButtonBase} ${imageInputMode === "upload" ? activeTabClasses : inactiveTabClasses}`}
-              >
-                <UploadCloud size={16} className="inline mr-1.5" /> Upload
-              </button>
-            </div>
-            {imageInputMode === "url" ? (
-              <input
-                id="itemImageUrl"
-                type="url"
-                value={imageUrlInput}
-                onChange={(e) => {
-                  setImageUrlInput(e.target.value);
-                  setImagePreview(e.target.value || null);
-                }}
-                placeholder="https://example.com/image.png"
-                className={inputClasses}
-              />
-            ) : (
-              <label
-                htmlFor="itemImageFile"
-                className={`w-full flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer ${themeClassNames.inputBorderColor} ${themeClassNames.buttonInactiveHoverBg} transition-colors`}
-              >
-                <UploadCloud
-                  size={32}
-                  className={`${themeClassNames.secondaryTextColor} mb-2`}
-                />
-                <span
-                  className={`text-sm font-medium ${themeClassNames.textColor}`}
-                >
-                  Click to upload or drag & drop
-                </span>
-                <span
-                  className={`text-xs ${themeClassNames.secondaryTextColor}`}
-                >
-                  SVG, PNG, JPG or GIF (Max 2MB)
-                </span>
-                <input
-                  id="itemImageFile"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="sr-only"
-                />
-              </label>
-            )}
-            {imagePreview && (
-              <div
-                className={`mt-4 p-2 border rounded-lg ${themeClassNames.borderColor} flex justify-center items-center h-32`}
-              >
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-full max-w-full object-contain rounded"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-            {!imagePreview && imageInputMode === "upload" && (
-              <div
-                className={`mt-4 p-2 border-2 border-dashed rounded-lg ${themeClassNames.borderColor} flex flex-col justify-center items-center h-32 text-center ${themeClassNames.secondaryTextColor}`}
-              >
-                <ImageIcon size={32} className="mb-1" />{" "}
-                <p className="text-sm">Image Preview</p>
-              </div>
-            )}
-          </div>
-          <div
-            className={`flex justify-end gap-3 pt-4 border-t ${themeClassNames.borderColor} mt-8`}
-          >
-            <button
-              type="button"
-              onClick={onClose}
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg ${themeClassNames.buttonInactiveBg} ${themeClassNames.buttonInactiveText} ${themeClassNames.buttonInactiveHoverBg} transition-colors shadow hover:shadow-md`}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg bg-[var(--accent-color)] text-black hover:bg-opacity-90 transition-colors shadow hover:shadow-md focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:ring-offset-1 focus:ring-offset-[var(--raw-card-bg-value)]`}
-            >
-              {itemToEdit ? (
-                <>
-                  <CheckSquare size={18} className="inline mr-1.5" /> Save
-                  Changes
-                </>
-              ) : (
-                <>
-                  <PlusCircle size={18} className="inline mr-1.5" /> Add Item
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 export default App;
