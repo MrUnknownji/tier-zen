@@ -40,6 +40,34 @@
     --input-fg: #1e293b; /* slate-800 */
 }
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #101010;
+        --foreground: #e2e8f0; /* slate-200 */
+        /* --accent-color: #someOtherAccentForDark; */ /* Example if accent needed to change */
+
+        --text-secondary: #94a3b8; /* slate-400 */
+        --card-bg: #1c1c1c;
+        --border-color: #383838;
+        --input-bg: #2a2a2a;
+        --input-border: #454545;
+        --placeholder-color: #64748b; /* slate-500 */
+        --button-inactive-bg: #2d2d2d;
+        --button-inactive-text: #cbd5e1; /* slate-300 */
+        --button-inactive-hover-bg: #3a3a3a;
+        --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+        --tab-container-bg: rgba(0, 0, 0, 0.2);
+        --raw-card-bg-value: #1c1c1c;
+
+        --card-hover-bg: #2d2d2d;
+        --card-bg-subtle: #2a2a2a;
+        --icon-secondary-color: #9ca3af; /* slate-400 */
+        --card-text-overlay-bg: rgba(0, 0, 0, 0.6);
+        --card-text-color: #f3f4f6; /* slate-100 */
+        --input-bg-transparent: rgba(30, 30, 30, 0.7);
+        --input-fg: #e2e8f0; /* slate-200 */
+    }
+}
 
 /*
   In Tailwind CSS v4, you use the @theme directive to map your CSS variables
@@ -86,21 +114,6 @@ body {
     font-family: theme(font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-}
-
-@keyframes new-tier-animation {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-new-tier {
-  animation: new-tier-animation 0.5s ease-out;
 }
 
 /* If you are using 'darkMode: class' in your Tailwind configuration (which might
