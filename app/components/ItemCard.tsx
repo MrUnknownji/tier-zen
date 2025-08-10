@@ -11,7 +11,7 @@ import { Item, ThemeClassNames } from "../lib/types";
 const ITEM_CARD_HEIGHT_CLASS = "h-36";
 
 import { gsap } from "gsap";
-import { Draggable } from "gsap/Draggable";
+import { Draggable } from "gsap/dist/Draggable";
 
 interface ItemCardProps {
   item: Item;

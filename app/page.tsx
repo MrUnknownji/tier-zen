@@ -1,8 +1,12 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { gsap } from "gsap";
-import { Draggable } from "gsap/Draggable";
+import { Draggable } from "gsap/dist/Draggable";
 import { toPng } from "html-to-image";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(Draggable);
+}
 import { saveAs } from "file-saver";
 import {
   Item,
@@ -73,7 +77,6 @@ function App() {
   const [justAddedTierId, setJustAddedTierId] = useState<string | null>(null);
 
   useEffect(() => {
-    gsap.registerPlugin(Draggable);
     if (typeof window !== "undefined") {
       const savedTiers = localStorage.getItem("tierListTiersV4");
       setTiers(savedTiers ? JSON.parse(savedTiers) : initialTiersData);
