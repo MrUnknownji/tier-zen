@@ -335,7 +335,10 @@ function App() {
     setShowAddItemModal(true);
   };
 
-  const handleDragStart = (item: Item, sourceTierId: string | "unranked") => {
+  // FIX: Wrap drag/drop handlers in useCallback to stabilize their references
+  // across re-renders. This prevents child components from re-running effects
+  // unnecessarily.
+  const handleDragStart = useCallback((item: Item, sourceTierId: string | "unranked") => {
     const sourceTier =
       sourceTierId === "unranked"
         ? { items: unrankedItems }
@@ -343,19 +346,18 @@ function App() {
     if (!sourceTier) return;
     const sourceIndex = sourceTier.items.findIndex((i) => i.id === item.id);
     setDraggedItem({ item, sourceTierId, sourceIndex });
-  };
+  }, [tiers, unrankedItems]);
 
-  const handleDrag = (
-    hitTestResult: { tierId: string | "unranked"; index: number } | null,
-  ) => {
-    if (hitTestResult) {
+  const handleDrag = useCallback(
+    (
+      hitTestResult: { tierId: string | "unranked"; index: number } | null,
+    ) => {
       setDropPreview(hitTestResult);
-    } else {
-      setDropPreview(null);
-    }
-  };
+    },
+    [],
+  );
 
-  const handleDrop = () => {
+  const handleDrop = useCallback(() => {
     if (!draggedItem || !dropPreview) {
       setDraggedItem(null);
       setDropPreview(null);
@@ -404,7 +406,8 @@ function App() {
 
     setDraggedItem(null);
     setDropPreview(null);
-  };
+  }, [draggedItem, dropPreview]);
+
 
   const resetAll = () => {
     if (
@@ -505,9 +508,5 @@ function App() {
     </div>
   );
 }
-
-
-
-
 
 export default App;
