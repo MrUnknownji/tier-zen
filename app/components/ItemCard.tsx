@@ -8,10 +8,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { Item, ThemeClassNames } from "../lib/types";
+import { gsap } from "gsap";
 
 const ITEM_CARD_HEIGHT_CLASS = "h-36";
-
-import { gsap } from "gsap";
 
 interface ItemCardProps {
   item: Item;
@@ -69,79 +68,84 @@ export default function ItemCard({
       const element = cardRef.current;
       if (!element) return;
       gsap.registerPlugin(Draggable);
-      // Use a stable concrete element for bounds
       const boundsTarget = document.documentElement;
-      // If the element isn't connected yet, wait a frame
+
       if (!element.isConnected) {
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         if (isCancelled || !element.isConnected) return;
       }
 
       draggableInstance = Draggable.create(element, {
-          type: "x,y",
-          bounds: boundsTarget,
-          zIndexBoost: true,
-          dragResistance: 0,
-          edgeResistance: 0.2,
-          onPress: function () {
+        type: "x,y",
+        bounds: boundsTarget,
+        zIndexBoost: true,
+        dragResistance: 0,
+        edgeResistance: 0.2,
+        onPress: function () {
           if (!this.target || !(this.target as Element).isConnected) return;
-            const el = this.target as HTMLElement;
-            el.classList.add("dragging");
-            gsap.set(el, { willChange: "transform", zIndex: 9999 });
-            handleDragStartRef.current();
-            gsap.to(el, { scale: 1.05, duration: 0.15, ease: "power2.out" });
-          },
-          onDrag: function () {
-            const droppables = Array.from(
-              document.querySelectorAll(".droppable-area"),
-            ) as HTMLElement[];
+          const el = this.target as HTMLElement;
+          el.classList.add("dragging");
+          gsap.set(el, { willChange: "transform", zIndex: 9999 });
+          handleDragStartRef.current();
+          gsap.to(el, {
+            scale: 1.1,
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", // shadow-xl
+            duration: 0.2,
+            ease: "power2.out"
+          });
+        },
+        onDrag: function () {
+          const droppables = Array.from(
+            document.querySelectorAll(".droppable-area"),
+          ) as HTMLElement[];
 
-            const dragRect = (this.target as HTMLElement).getBoundingClientRect();
-            const centerX = dragRect.left + dragRect.width / 2;
-            const centerY = dragRect.top + dragRect.height / 2;
-            const pointerX: number =
-              (this as any).pointerX ??
-              ((this as any).x ?? 0) + ((this as any).startPointerX ?? 0);
+          const dragRect = (this.target as HTMLElement).getBoundingClientRect();
+          const centerX = dragRect.left + dragRect.width / 2;
+          const centerY = dragRect.top + dragRect.height / 2;
+          const pointerX: number =
+            (this as any).pointerX ??
+            ((this as any).x ?? 0) + ((this as any).startPointerX ?? 0);
 
-            const bestDrop = droppables.find((dropEl) => {
-              const r = dropEl.getBoundingClientRect();
-              return centerX >= r.left &&
-                     centerX <= r.right &&
-                     centerY >= r.top &&
-                     centerY <= r.bottom;
-            }) || null;
+          const bestDrop = droppables.find((dropEl) => {
+            const r = dropEl.getBoundingClientRect();
+            return (
+              centerX >= r.left &&
+              centerX <= r.right &&
+              centerY >= r.top &&
+              centerY <= r.bottom
+            );
+          }) || null;
 
-            if (!bestDrop) {
-              handleDragRef.current(null);
-              return;
+          if (!bestDrop) {
+            handleDragRef.current(null);
+            return;
+          }
+
+          const tierId = bestDrop.getAttribute("data-tier-id")!;
+          const items = Array.from(
+            bestDrop.querySelectorAll(".draggable-item"),
+          ).filter((el) => el !== (this as any).target) as HTMLElement[];
+
+          let index = items.length;
+          for (let j = 0; j < items.length; j++) {
+            const r = items[j].getBoundingClientRect();
+            if (pointerX < r.left + r.width / 2) {
+              index = j;
+              break;
             }
-
-            const tierId = bestDrop.getAttribute("data-tier-id")!;
-            const items = Array.from(
-              bestDrop.querySelectorAll(".draggable-item"),
-            ).filter((el) => el !== (this as any).target) as HTMLElement[];
-
-            let index = items.length;
-            for (let j = 0; j < items.length; j++) {
-              const r = items[j].getBoundingClientRect();
-              if (pointerX < r.left + r.width / 2) {
-                index = j;
-                break;
-              }
-            }
-            handleDragRef.current({ tierId, index });
-          },
-          onRelease: function () {
-            const el = this.target as HTMLElement;
-            handleDropRef.current();
-            gsap.to(el, { scale: 1, duration: 0.12, ease: "power2.out" });
-            // Clear transform props after a tick; React will re-render in new location
-            requestAnimationFrame(() => {
-              gsap.set(el, { clearProps: "transform,willChange,zIndex" });
-              el.classList.remove("dragging");
-            });
-          },
-        })[0];
+          }
+          handleDragRef.current({ tierId, index });
+        },
+        onRelease: function () {
+          const el = this.target as HTMLElement;
+          handleDropRef.current();
+          gsap.to(el, { scale: 1, boxShadow: "none", duration: 0.15, ease: "back.out(1.7)" });
+          requestAnimationFrame(() => {
+            gsap.set(el, { clearProps: "transform,willChange,zIndex,boxShadow" });
+            el.classList.remove("dragging");
+          });
+        },
+      })[0];
     })();
 
     return () => {
@@ -159,15 +163,17 @@ export default function ItemCard({
   return (
     <div
       ref={cardRef}
-      className={`m-1 ${themeClassNames.cardBgColor} rounded-lg shadow-md w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} flex flex-col relative transition-all duration-300 ${draggable ? "cursor-grab" : "cursor-default"} group overflow-hidden border-2 border-transparent hover:border-[var(--accent-color)]/50`}
+      className={`draggable-item m-2 ${themeClassNames.cardBgColor} rounded-xl shadow-md hover:shadow-xl w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} flex flex-col relative transition-all duration-300 ${
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+      } group overflow-hidden border border-transparent hover:border-[var(--accent-color)] hover:scale-105`}
       title={item.name}
     >
-      <div className="flex-grow relative overflow-hidden">
+      <div className="flex-grow relative overflow-hidden rounded-t-xl">
         {item.imageUrl && !item.hasError ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
             onError={onImageError}
           />
         ) : (
@@ -184,32 +190,30 @@ export default function ItemCard({
             )}
           </div>
         )}
+
+        {/* Text Overlay - improved for readability */}
+        <div className="absolute bottom-0 left-0 right-0 pt-6 pb-2 px-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+             <p className="text-xs truncate font-semibold text-white drop-shadow-sm text-center">
+              {item.name}
+            </p>
+        </div>
+
         {draggable && (
           <GripVertical
-            size={18}
-            className={`absolute top-1 right-1 ${themeClassNames.iconSecondaryColor} opacity-50 group-hover:opacity-100 transition-opacity`}
+            size={16}
+            className="absolute top-2 right-2 text-white drop-shadow-md opacity-0 group-hover:opacity-80 transition-opacity"
           />
         )}
       </div>
 
-      <div
-        className={`p-2 w-full ${themeClassNames.cardTextOverlayBgColor} backdrop-blur-sm`}
-      >
-        <p
-          className={`text-xs truncate font-medium ${themeClassNames.cardTextColor}`}
-        >
-          {item.name}
-        </p>
-      </div>
-
       {isEditMode && (
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 rounded-xl transition-all duration-300 z-10">
           <button
             onClick={() => openEditItemModal(item)}
-            className={`p-2 bg-white/90 dark:bg-neutral-600/90 backdrop-blur-sm rounded-full text-[var(--accent-color)] hover:bg-opacity-100 hover:scale-110 transition-transform`}
+            className="p-2 bg-white text-indigo-600 rounded-full hover:scale-110 hover:shadow-lg transition-all"
             title={`Edit ${item.name}`}
           >
-            <Edit3 size={14} />
+            <Edit3 size={16} />
           </button>
           <button
             onClick={() => {
@@ -220,10 +224,10 @@ export default function ItemCard({
               )
                 deleteItem(item.id);
             }}
-            className="p-2 bg-white/90 dark:bg-neutral-600/90 backdrop-blur-sm rounded-full text-red-500 hover:text-red-700 hover:bg-opacity-100"
+            className="p-2 bg-white text-red-500 rounded-full hover:scale-110 hover:shadow-lg transition-all"
             title={`Delete ${item.name}`}
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
           </button>
         </div>
       )}

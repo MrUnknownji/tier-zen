@@ -8,7 +8,7 @@ import {
 import ItemCard from "./ItemCard";
 
 const ITEM_CARD_HEIGHT_CLASS = "h-36";
-const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[156px]";
+const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[160px]";
 
 interface UnrankedItemsContainerProps {
   items: Item[];
@@ -42,13 +42,15 @@ export default function UnrankedItemsContainer({
   dropPreview,
 }: UnrankedItemsContainerProps) {
   const isCurrentDropTarget = dropPreview?.tierId === "unranked";
-  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex flex-wrap items-start p-3 border-2 rounded-lg mt-6 transition-all`;
+
+  // Refined styling for the drop area to match TierRow
+  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex flex-wrap items-center justify-center sm:justify-start content-center p-3 rounded-xl transition-all duration-200 min-h-[180px]`;
   const highlightClasses =
     draggedItem && !isEditMode
       ? isCurrentDropTarget
-        ? `border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] border-solid`
-        : `border-dashed border-[var(--accent-color)]/50`
-      : `border-dashed ${themeClassNames.borderColor}`;
+        ? `bg-[var(--accent-color)]/10 ring-2 ring-inset ring-[var(--accent-color)]`
+        : `bg-[var(--accent-color)]/5 ring-1 ring-inset ring-dashed ring-[var(--accent-color)]/40`
+      : `bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700`;
 
   const itemsWithPreview = [...items];
   if (isCurrentDropTarget && dropPreview && draggedItem) {
@@ -62,45 +64,55 @@ export default function UnrankedItemsContainer({
 
   return (
     <div
-      className={`p-4 rounded-lg shadow-md mt-6 sm:mt-8 ${themeClassNames.cardBgColor}`}
+      className={`p-6 rounded-2xl shadow-lg mt-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800`}
     >
-      <h3
-        className={`text-lg sm:text-xl font-semibold mb-3 text-center ${themeClassNames.textColor}`}
-      >
-        <Columns size={20} className="inline mr-2 align-text-bottom" /> Unranked
-        Items
-      </h3>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 bg-[var(--accent-color)]/10 rounded-lg text-[var(--accent-color)]">
+             <Columns size={20} />
+        </div>
+        <h3
+            className={`text-xl font-bold text-slate-800 dark:text-slate-100`}
+        >
+            Unranked Items
+        </h3>
+        <span className="ml-auto text-sm font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
+            {items.length}
+        </span>
+      </div>
+
       <div
-        className={`${baseDropClasses} ${highlightClasses} justify-center sm:justify-start gap-1 relative items-container droppable-area`}
+        className={`${baseDropClasses} ${highlightClasses} gap-2 relative items-container droppable-area`}
         data-tier-id="unranked"
       >
         {itemsWithPreview.length === 0 && !isEditMode && !draggedItem && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            All items ranked! Drag items here or from tiers.
-          </p>
+          <div className="text-center p-8">
+            <p className="text-slate-400 italic">
+                All items ranked!
+            </p>
+            <p className="text-xs text-slate-300 mt-1">Drag items here or from tiers to unrank.</p>
+          </div>
         )}
         {itemsWithPreview.length === 0 && isEditMode && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            Add new items using the "Add Item" button above.
-          </p>
+          <div className="text-center p-8">
+             <p className="text-slate-400 italic">
+                No items yet.
+             </p>
+             <p className="text-xs text-[var(--accent-color)] mt-2 font-medium">Click "Add Item" to get started.</p>
+          </div>
         )}
         {itemsWithPreview.length === 0 && draggedItem && !isEditMode && (
-          <p
-            className={`${themeClassNames.secondaryTextColor} italic p-4 text-center w-full text-sm`}
-          >
-            Drop item here to unrank it.
-          </p>
+           <div className="text-center p-8">
+            <p className="text-[var(--accent-color)] font-medium animate-pulse">
+                Drop item here to unrank
+            </p>
+          </div>
         )}
 
         {itemsWithPreview.map((item) =>
           item.isPlaceholder ? (
             <div
               key={item.id}
-              className={`drop-preview-placeholder-item m-1 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-lg border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center opacity-70`}
+              className={`drop-preview-placeholder-item m-2 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-xl border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center animate-pulse`}
             >
               <ImageIcon
                 size={32}
