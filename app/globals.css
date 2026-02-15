@@ -1,93 +1,115 @@
-/* globals.css */
 @import "tailwindcss";
 
 :root {
-    /* Font variables (will be populated by next/font in layout.tsx) */
-    /* Provide fallbacks here in case JS/Next Font fails, though Next Font should handle this. */
-    --font-geist-sans:
-        "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-        "Noto Color Emoji";
-    --font-geist-mono:
-        "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
+  /* Font variables (will be populated by next/font in layout.tsx) */
+  --font-geist-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
 
-    /* Light Theme (Default) */
-    --background: #f8fafc; /* slate-50 */
-    --foreground: #1e293b; /* slate-800 */
-    --accent-color: #00ff87;
+  /* Light Theme (Default) - Modern & Clean */
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --accent-color: #6366f1; /* indigo-500 */
+  --accent-hover: #4f46e5; /* indigo-600 */
 
-    --text-secondary: #64748b; /* slate-500 */
-    --card-bg: #ffffff;
-    --border-color: #cbd5e1; /* slate-300 */
-    --input-bg: #f1f5f9; /* slate-100 */
-    --input-border: #cbd5e1; /* slate-300 */
-    --placeholder-color: #94a3b8; /* slate-400 */
-    --button-inactive-bg: #e2e8f0; /* slate-200 */
-    --button-inactive-text: #334155; /* slate-700 */
-    --button-inactive-hover-bg: #cbd5e1; /* slate-300 */
-    --modal-overlay-bg: rgba(0, 0, 0, 0.5);
-    --tab-container-bg: #f1f5f9; /* slate-100 */
-    --raw-card-bg-value: #ffffff; /* For ring offsets or direct hex needs */
+  --text-secondary: #64748b; /* slate-500 */
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0; /* slate-200 */
+  --input-bg: #f1f5f9; /* slate-100 */
+  --input-border: #cbd5e1; /* slate-300 */
+  --placeholder-color: #94a3b8; /* slate-400 */
 
-    --card-hover-bg: #e5e7eb; /* slate-200 */
-    --card-bg-subtle: #f3f4f6; /* slate-100 */
-    --icon-secondary-color: #6b7280; /* slate-500 */
-    --card-text-overlay-bg: rgba(0, 0, 0, 0.4);
-    --card-text-color: #ffffff;
-    --input-bg-transparent: rgba(255, 255, 255, 0.7);
-    --input-fg: #1e293b; /* slate-800 */
+  --button-inactive-bg: #f1f5f9; /* slate-100 */
+  --button-inactive-text: #475569; /* slate-600 */
+  --button-inactive-hover-bg: #e2e8f0; /* slate-200 */
+
+  --modal-overlay-bg: rgba(15, 23, 42, 0.4); /* slate-900 with opacity */
+  --tab-container-bg: #f1f5f9; /* slate-100 */
+  --raw-card-bg-value: #ffffff;
+
+  --card-hover-bg: #f8fafc; /* slate-50 */
+  --card-bg-subtle: #f1f5f9; /* slate-100 */
+  --icon-secondary-color: #94a3b8; /* slate-400 */
+  --card-text-overlay-bg: rgba(255, 255, 255, 0.85);
+  --card-text-color: #0f172a; /* slate-900 */
+  --input-bg-transparent: rgba(255, 255, 255, 0.5);
+  --input-fg: #0f172a; /* slate-900 */
 }
 
+/* Dark Theme - Deep & Vibrant */
+html.dark {
+  --background: #020617; /* slate-950 */
+  --foreground: #f8fafc; /* slate-50 */
+  --accent-color: #818cf8; /* indigo-400 */
+  --accent-hover: #6366f1; /* indigo-500 */
 
-/*
-  In Tailwind CSS v4, you use the @theme directive to map your CSS variables
-  to Tailwind's theme properties.
-*/
+  --text-secondary: #94a3b8; /* slate-400 */
+  --card-bg: #0f172a; /* slate-900 */
+  --border-color: #1e293b; /* slate-800 */
+  --input-bg: #1e293b; /* slate-800 */
+  --input-border: #334155; /* slate-700 */
+  --placeholder-color: #64748b; /* slate-500 */
+
+  --button-inactive-bg: #1e293b; /* slate-800 */
+  --button-inactive-text: #cbd5e1; /* slate-300 */
+  --button-inactive-hover-bg: #334155; /* slate-700 */
+
+  --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+  --tab-container-bg: #1e293b; /* slate-800 */
+  --raw-card-bg-value: #0f172a;
+
+  --card-hover-bg: #1e293b; /* slate-800 */
+  --card-bg-subtle: #1e293b; /* slate-800 */
+  --icon-secondary-color: #64748b; /* slate-500 */
+  --card-text-overlay-bg: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
+  --card-text-color: #f8fafc; /* slate-50 */
+  --input-bg-transparent: rgba(30, 41, 59, 0.5); /* slate-800 with opacity */
+  --input-fg: #f8fafc; /* slate-50 */
+}
+
 @theme {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-accent: var(--accent-color);
-    --color-text-secondary: var(--text-secondary);
-    --color-card-bg: var(--card-bg);
-    --color-border-color: var(--border-color);
-    --color-input-bg: var(--input-bg);
-    --color-input-border: var(--input-border);
-    --color-placeholder-color: var(--placeholder-color);
-    --color-button-inactive-bg: var(--button-inactive-bg);
-    --color-button-inactive-text: var(--button-inactive-text);
-    --color-button-inactive-hover-bg: var(--button-inactive-hover-bg);
-    --color-modal-overlay-bg: var(--modal-overlay-bg);
-    --color-tab-container-bg: var(--tab-container-bg);
-    --color-raw-card-bg-value: var(--raw-card-bg-value); /* If you need this as a color utility */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent-color);
+  --color-accent-hover: var(--accent-hover);
+  --color-text-secondary: var(--text-secondary);
+  --color-card-bg: var(--card-bg);
+  --color-border-color: var(--border-color);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-placeholder-color: var(--placeholder-color);
+  --color-button-inactive-bg: var(--button-inactive-bg);
+  --color-button-inactive-text: var(--button-inactive-text);
+  --color-button-inactive-hover-bg: var(--button-inactive-hover-bg);
+  --color-modal-overlay-bg: var(--modal-overlay-bg);
+  --color-tab-container-bg: var(--tab-container-bg);
+  --color-raw-card-bg-value: var(--raw-card-bg-value);
 
-    --color-card-hover-bg: var(--card-hover-bg);
-    --color-card-bg-subtle: var(--card-bg-subtle);
-    --color-icon-secondary: var(--icon-secondary-color);
-    --color-card-text-overlay-bg: var(--card-text-overlay-bg);
-    --color-card-text: var(--card-text-color);
-    --color-input-bg-transparent: var(--input-bg-transparent);
-    --color-input-fg: var(--input-fg);
+  --color-card-hover-bg: var(--card-hover-bg);
+  --color-card-bg-subtle: var(--card-bg-subtle);
+  --color-icon-secondary: var(--icon-secondary-color);
+  --color-card-text-overlay-bg: var(--card-text-overlay-bg);
+  --color-card-text: var(--card-text-color);
+  --color-input-bg-transparent: var(--input-bg-transparent);
+  --color-input-fg: var(--input-fg);
 
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-
-    /* You can also define other theme properties here, like spacing, etc. */
-    /* --spacing-sm: 0.5rem; */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
-/* Apply base styles using the mapped theme variables */
+/* Base Styles */
 body {
-    background-color: theme(
-        color-background
-    ); /* Use theme() to reference mapped variables */
-    color: theme(color-foreground);
-    font-family: theme(font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  background-color: theme(color-background);
+  color: theme(color-foreground);
+  font-family: theme(font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply transition-colors duration-300;
 }
 
+/* Animations */
 @keyframes new-tier-animation {
   from {
     opacity: 0;
@@ -100,35 +122,27 @@ body {
 }
 
 .animate-new-tier {
-  animation: new-tier-animation 0.5s ease-out;
+  animation: new-tier-animation 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* If you are using 'darkMode: class' in your Tailwind configuration (which might
-   still be needed for explicit dark mode toggling even in v4 depending on setup),
-   you would still define the dark variables within a .dark class or similar.
-   However, the @media query approach above handles OS preference automatically.
-*/
-html.dark {
-    --background: #101010;
-    --foreground: #e2e8f0;
-    --text-secondary: #94a3b8;
-    --card-bg: #1c1c1c;
-    --border-color: #383838;
-    --input-bg: #2a2a2a;
-    --input-border: #454545;
-    --placeholder-color: #64748b;
-    --button-inactive-bg: #2d2d2d;
-    --button-inactive-text: #cbd5e1;
-    --button-inactive-hover-bg: #3a3a3a;
-    --modal-overlay-bg: rgba(0, 0, 0, 0.7);
-    --tab-container-bg: rgba(0, 0, 0, 0.2);
-    --raw-card-bg-value: #1c1c1c;
+/* Utilities */
+.glass {
+  @apply backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/20 dark:border-white/10;
+}
 
-    --card-hover-bg: #2d2d2d;
-    --card-bg-subtle: #2a2a2a;
-    --icon-secondary-color: #9ca3af; /* slate-400 */
-    --card-text-overlay-bg: rgba(0, 0, 0, 0.6);
-    --card-text-color: #f3f4f6; /* slate-100 */
-    --input-bg-transparent: rgba(30, 30, 30, 0.7);
-    --input-fg: #e2e8f0; /* slate-200 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
 }

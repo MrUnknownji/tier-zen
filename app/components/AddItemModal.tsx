@@ -38,8 +38,8 @@ export default function AddItemModal({
       gsap.to(overlayRef.current, { opacity: 1, duration: 0.3 });
       gsap.fromTo(
         modalRef.current,
-        { y: 50, opacity: 0, scale: 0.95 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" },
+        { y: 20, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.2)" },
       );
 
       if (itemToEdit) {
@@ -67,15 +67,15 @@ export default function AddItemModal({
 
   const handleClose = () => {
     gsap.to(modalRef.current, {
-      y: 50,
+      y: 20,
       opacity: 0,
       scale: 0.95,
-      duration: 0.3,
+      duration: 0.2,
       ease: "power2.in",
     });
     gsap.to(overlayRef.current, {
       opacity: 0,
-      duration: 0.3,
+      duration: 0.2,
       onComplete: onClose,
     });
   };
@@ -109,56 +109,58 @@ export default function AddItemModal({
 
   if (!isOpen) return null;
 
-  const inputClasses = `w-full p-3 border rounded-lg ${themeClassNames.inputBgColor} ${themeClassNames.inputBorderColor} ${themeClassNames.textColor} ${themeClassNames.placeholderColor} focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--background)] focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] transition-all`;
-  const tabButtonBase = `flex-1 py-2.5 px-3 rounded-md text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--card-bg)] focus:ring-[var(--accent-color)]`;
-  const activeTabClasses = `bg-[var(--accent-color)] text-black shadow-sm`;
-  const inactiveTabClasses = `${themeClassNames.buttonInactiveBg} ${themeClassNames.buttonInactiveText} hover:bg-[var(--button-inactive-hover-bg)]`;
+  const inputClasses = `w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent transition-all outline-none`;
+  const tabButtonBase = `flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none`;
+  const activeTabClasses = `bg-white dark:bg-slate-700 text-[var(--accent-color)] shadow-sm ring-1 ring-slate-200 dark:ring-slate-600`;
+  const inactiveTabClasses = `text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800`;
 
   return (
     <div
       ref={overlayRef}
-      className={`fixed inset-0 ${themeClassNames.modalOverlayBg} flex items-center justify-center p-4 z-50 opacity-0`}
+      className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0`}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
-        className={`${themeClassNames.cardBgColor} p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-lg opacity-0`}
+        className={`bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-lg opacity-0 border border-slate-200 dark:border-slate-800`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-            <h2 className={`text-2xl sm:text-3xl font-semibold ${themeClassNames.textColor}`}>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
             {itemToEdit ? "Edit Item" : "Add New Item"}
             </h2>
-            <button onClick={handleClose} className="p-1 rounded-full hover:bg-[var(--button-inactive-hover-bg)]">
+            <button onClick={handleClose} className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                 <X size={24} />
             </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="itemName"
-              className={`block text-sm font-medium mb-1.5 ${themeClassNames.textColor}`}
+              className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
             >
-              Name <span className="text-red-500">*</span>
+              Name <span className="text-[var(--accent-color)]">*</span>
             </label>
             <input
               id="itemName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter item name"
+              placeholder="e.g. Awesome Character"
               required
               className={inputClasses}
             />
           </div>
+
           <div>
             <label
-              className={`block text-sm font-medium mb-2 ${themeClassNames.textColor}`}
+              className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2"
             >
               Image Source
             </label>
             <div
-              className={`flex gap-1 p-1 rounded-lg mb-3 ${themeClassNames.tabContainerBg}`}
+              className="flex gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 mb-4"
             >
               <button
                 type="button"
@@ -170,7 +172,7 @@ export default function AddItemModal({
                 }}
                 className={`${tabButtonBase} ${imageInputMode === "url" ? activeTabClasses : inactiveTabClasses}`}
               >
-                <Link2 size={16} className="inline mr-1.5" /> URL
+                <Link2 size={16} className="inline mr-2" /> Image URL
               </button>
               <button
                 type="button"
@@ -181,9 +183,10 @@ export default function AddItemModal({
                 }}
                 className={`${tabButtonBase} ${imageInputMode === "upload" ? activeTabClasses : inactiveTabClasses}`}
               >
-                <UploadCloud size={16} className="inline mr-1.5" /> Upload
+                <UploadCloud size={16} className="inline mr-2" /> Upload File
               </button>
             </div>
+
             {imageInputMode === "url" ? (
               <input
                 id="itemImageUrl"
@@ -199,19 +202,19 @@ export default function AddItemModal({
             ) : (
               <label
                 htmlFor="itemImageFile"
-                className={`w-full flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer ${themeClassNames.inputBorderColor} hover:bg-[var(--button-inactive-hover-bg)] transition-colors`}
+                className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer border-slate-300 dark:border-slate-700 hover:border-[var(--accent-color)] hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group"
               >
                 <UploadCloud
                   size={32}
-                  className={`${themeClassNames.secondaryTextColor} mb-2`}
+                  className="text-slate-400 group-hover:text-[var(--accent-color)] mb-3 transition-colors"
                 />
                 <span
-                  className={`text-sm font-medium ${themeClassNames.textColor}`}
+                  className="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-[var(--accent-color)] transition-colors"
                 >
                   Click to upload or drag & drop
                 </span>
                 <span
-                  className={`text-xs ${themeClassNames.secondaryTextColor}`}
+                  className="text-xs text-slate-500 mt-1"
                 >
                   SVG, PNG, JPG or GIF (Max 2MB)
                 </span>
@@ -224,52 +227,55 @@ export default function AddItemModal({
                 />
               </label>
             )}
-            {imagePreview && (
+
+            {(imagePreview || (!imagePreview && imageInputMode === "upload")) && (
               <div
-                className={`mt-4 p-2 border rounded-lg ${themeClassNames.borderColor} flex justify-center items-center h-32 bg-[var(--card-bg-subtle)]`}
+                className="mt-4 p-4 border rounded-xl border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center h-40 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative"
               >
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-full max-w-full object-contain rounded"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-            {!imagePreview && imageInputMode === "upload" && (
-              <div
-                className={`mt-4 p-2 border-2 border-dashed rounded-lg ${themeClassNames.borderColor} flex flex-col justify-center items-center h-32 text-center ${themeClassNames.secondaryTextColor} bg-[var(--card-bg-subtle)]`}
-              >
-                <ImageIcon size={32} className="mb-1" />{" "}
-                <p className="text-sm">Image Preview</p>
+                {imagePreview ? (
+                   <>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="max-h-full max-w-full object-contain rounded shadow-sm z-10"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+                   </>
+                ) : (
+                    <div className="text-center text-slate-400">
+                        <ImageIcon size={40} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm font-medium">No image selected</p>
+                    </div>
+                )}
               </div>
             )}
           </div>
+
           <div
-            className={`flex justify-end gap-3 pt-4 border-t ${themeClassNames.borderColor} mt-8`}
+            className="flex justify-end gap-3 pt-6 mt-2"
           >
             <button
               type="button"
               onClick={handleClose}
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg ${themeClassNames.buttonInactiveBg} ${themeClassNames.buttonInactiveText} ${themeClassNames.buttonInactiveHoverBg} transition-colors shadow hover:shadow-md`}
+              className="px-5 py-2.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg bg-[var(--accent-color)] text-black hover:bg-opacity-90 transition-colors shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--background)] focus:ring-[var(--accent-color)]`}
+              className="px-6 py-2.5 text-sm font-medium rounded-full bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
               {itemToEdit ? (
-                <>
-                  <CheckSquare size={18} className="inline mr-1.5" /> Save
-                  Changes
-                </>
+                <span className="flex items-center gap-2">
+                  <CheckSquare size={18} /> Save Changes
+                </span>
               ) : (
-                <>
-                  <PlusCircle size={18} className="inline mr-1.5" /> Add Item
-                </>
+                <span className="flex items-center gap-2">
+                  <PlusCircle size={18} /> Add Item
+                </span>
               )}
             </button>
           </div>

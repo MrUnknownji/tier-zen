@@ -3,6 +3,9 @@ import {
   Palette,
   Trash2,
   Image as ImageIcon,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 import {
   Tier,
@@ -13,7 +16,7 @@ import {
 import ItemCard from "./ItemCard";
 
 const ITEM_CARD_HEIGHT_CLASS = "h-36";
-const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[156px]";
+const ITEM_CONTAINER_MIN_HEIGHT_CLASS = "min-h-[160px]";
 
 interface TierRowProps {
   tier: Tier;
@@ -69,36 +72,44 @@ export default function TierRow({
     if (tier.id === justAddedTierId) {
       setTimeout(() => {
         setJustAddedTierId(null);
-      }, 500); // Duration of the animation
+      }, 500);
     }
   }, [justAddedTierId, tier.id, setJustAddedTierId]);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleNameChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setTempName(e.target.value);
+
   const saveName = () => {
     tempName.trim()
       ? updateTier(tier.id, { name: tempName.trim() })
       : setTempName(tier.name);
     setIsEditingName(false);
   };
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") saveName();
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveName();
+    }
     if (e.key === "Escape") {
       setTempName(tier.name);
       setIsEditingName(false);
     }
   };
+
   const handleColor = (e: React.ChangeEvent<HTMLInputElement>) =>
     updateTier(tier.id, { color: e.target.value });
 
   const isCurrentDropTarget = dropPreview?.tierId === tier.id;
-  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex-grow flex flex-wrap items-start p-2 border-2 rounded-r-lg transition-all duration-150`;
+
+  // Refined styling for the drop area
+  const baseDropClasses = `${ITEM_CONTAINER_MIN_HEIGHT_CLASS} flex-grow flex flex-wrap items-center content-center p-3 transition-all duration-200`;
   const highlightClasses =
     draggedItem && !isEditMode
       ? isCurrentDropTarget
-        ? `border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] border-solid`
-        : `border-dashed border-[var(--accent-color)]/50`
-      : `border-dashed ${themeClassNames.borderColor}`;
+        ? `bg-[var(--accent-color)]/10 ring-2 ring-inset ring-[var(--accent-color)]`
+        : `bg-[var(--accent-color)]/5 ring-1 ring-inset ring-dashed ring-[var(--accent-color)]/40`
+      : `${themeClassNames.cardBgColor}`;
 
   const itemsWithPreview = [...tier.items];
   if (isCurrentDropTarget && dropPreview && draggedItem) {
@@ -113,42 +124,61 @@ export default function TierRow({
   return (
     <div
       ref={rowRef}
-      className={`flex items-stretch rounded-lg shadow-md transition-shadow duration-300 hover:shadow-xl mb-3 ${themeClassNames.cardBgColor} ${tier.id === justAddedTierId ? "animate-new-tier" : ""}`}
+      className={`flex rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 mb-4 bg-white dark:bg-slate-900 ${tier.id === justAddedTierId ? "animate-new-tier" : ""}`}
     >
+      {/* Tier Label Section */}
       <div
-        className="w-24 sm:w-28 md:w-32 flex flex-col items-center justify-center p-2 sm:p-3 text-center rounded-l-lg transition-colors"
+        className="w-28 sm:w-36 md:w-44 flex flex-col items-center justify-center p-4 text-center transition-colors relative group"
         style={{ backgroundColor: tier.color, color: tier.textColor }}
       >
         {isEditMode && isEditingName ? (
-          <input
-            type="text"
-            value={tempName}
-            onChange={handleNameChange}
-            onBlur={saveName}
-            onKeyDown={handleKeyDown}
-            className={`w-full text-sm p-1 rounded ${themeClassNames.inputBgTransparentColor} ${themeClassNames.inputFgColor} focus:outline-none ring-1 ring-[var(--accent-color)] dark:ring-gray-300`}
-            autoFocus
-          />
+          <div className="w-full flex flex-col items-center gap-2">
+            <textarea
+              value={tempName}
+              onChange={handleNameChange}
+              onBlur={saveName}
+              onKeyDown={handleKeyDown}
+              className="w-full text-center text-lg font-bold bg-black/20 text-inherit rounded p-1 resize-none focus:outline-none focus:ring-2 focus:ring-white/50"
+              rows={2}
+              autoFocus
+            />
+            <div className="flex gap-2">
+                <button onMouseDown={(e) => { e.preventDefault(); saveName(); }} className="p-1 bg-black/20 hover:bg-black/40 rounded text-inherit">
+                    <Check size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); setTempName(tier.name); setIsEditingName(false); }} className="p-1 bg-black/20 hover:bg-black/40 rounded text-inherit">
+                    <X size={16} />
+                </button>
+            </div>
+          </div>
         ) : (
-          <h2
-            className="text-md sm:text-lg font-semibold break-words w-full cursor-pointer"
-            onClick={() => isEditMode && setIsEditingName(true)}
-            title={isEditMode ? "Click to edit tier name" : tier.name}
-          >
-            {tier.name}
-          </h2>
+          <>
+            <h2
+              className="text-xl sm:text-2xl font-bold uppercase tracking-wider break-words w-full select-none"
+              title={tier.name}
+            >
+              {tier.name}
+            </h2>
+            {isEditMode && (
+                <button
+                    onClick={() => setIsEditingName(true)}
+                    className="absolute top-2 right-2 p-1.5 bg-black/10 hover:bg-black/30 rounded-full text-inherit opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Rename Tier"
+                >
+                    <Edit2 size={14} />
+                </button>
+            )}
+          </>
         )}
-        {isEditMode && (
-          <div className="mt-2 flex items-center gap-2 sm:gap-3">
+
+        {isEditMode && !isEditingName && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
             <label
               htmlFor={`color-${tier.id}`}
-              className="cursor-pointer group relative"
-              title="Change tier color"
+              className="p-1.5 bg-black/20 hover:bg-black/40 rounded-full cursor-pointer text-inherit transition-colors backdrop-blur-sm"
+              title="Change Color"
             >
-              <Palette
-                size={18}
-                className="opacity-70 group-hover:opacity-100"
-              />
+              <Palette size={16} />
               <input
                 id={`color-${tier.id}`}
                 type="color"
@@ -164,38 +194,38 @@ export default function TierRow({
                   : `Delete tier "${tier.name}"? This cannot be undone.`;
                 if (window.confirm(msg)) deleteTier(tier.id);
               }}
-              className="text-red-500 hover:text-red-700"
-              title="Delete tier"
+              className="p-1.5 bg-black/20 hover:bg-red-500/80 rounded-full text-inherit transition-colors backdrop-blur-sm"
+              title="Delete Tier"
             >
-              <Trash2 size={16} className="opacity-70 hover:opacity-100" />
+              <Trash2 size={16} />
             </button>
           </div>
         )}
       </div>
+
+      {/* Drop Area */}
       <div
-        className={`${baseDropClasses} ${highlightClasses} relative items-container droppable-area`}
+        className={`${baseDropClasses} ${highlightClasses} relative items-container droppable-area w-full min-h-[160px]`}
         data-tier-id={tier.id}
       >
         {itemsWithPreview.length === 0 && !isEditMode && (
-          <div
-            className={`w-full h-full flex items-center justify-center ${themeClassNames.secondaryTextColor} italic text-sm`}
-          >
-            Drag items here
+          <div className="w-full h-full flex items-center justify-center opacity-40 select-none pointer-events-none">
+             <span className="text-4xl font-black text-slate-200 dark:text-slate-800 tracking-[0.2em] uppercase">
+                Empty
+             </span>
           </div>
         )}
         {itemsWithPreview.length === 0 && isEditMode && (
-          <div
-            className={`w-full h-full flex items-center justify-center ${themeClassNames.secondaryTextColor} italic text-sm`}
-          >
-            Add items via "Add Item" or drag from Unranked
-          </div>
+            <div className={`w-full h-full flex items-center justify-center ${themeClassNames.secondaryTextColor} italic text-sm select-none`}>
+                Empty Tier
+            </div>
         )}
 
         {itemsWithPreview.map((item) =>
           item.isPlaceholder ? (
             <div
               key={item.id}
-              className={`drop-preview-placeholder-item m-1 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-lg border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center opacity-70`}
+              className={`drop-preview-placeholder-item m-2 w-24 sm:w-28 ${ITEM_CARD_HEIGHT_CLASS} rounded-xl border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-color)]/10 flex items-center justify-center animate-pulse`}
             >
               <ImageIcon
                 size={32}
